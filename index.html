@@ -16,7 +16,6 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;}
   .shell{max-width:1040px;margin:0 auto;padding:16px;}
-
   .buscar-screen{min-height:60vh;display:flex;align-items:center;justify-content:center;}
   .buscar-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:480px;box-shadow:var(--shadow);text-align:center;}
   .buscar-box h2{font-size:18px;font-weight:600;margin-bottom:6px;}
@@ -30,7 +29,6 @@
   .cuenta-sug-item:hover{background:var(--accent-lt);}
   .cuenta-sug-nombre{font-weight:500;}
   .cuenta-sug-meta{font-size:11px;color:var(--muted);margin-top:2px;}
-
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:300;}
   .modal-box{background:var(--surface);border-radius:12px;padding:24px;max-width:500px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,.2);}
   .modal-box h3{font-size:15px;font-weight:600;margin-bottom:6px;}
@@ -42,7 +40,6 @@
   .trato-item-nombre{font-weight:500;font-size:13px;}
   .trato-item-meta{font-size:11px;color:var(--muted);margin-top:2px;}
   .modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
-
   .cliente-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
   .cliente-avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .cliente-info{flex:1;min-width:0;}
@@ -56,7 +53,6 @@
   .cambiar-cuenta{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;margin-left:8px;}
   .btn-registrar-perseo{font-size:11px;padding:4px 10px;border-radius:20px;background:#fff;color:var(--warn);border:1px solid var(--warn);cursor:pointer;font-family:inherit;font-weight:500;white-space:nowrap;}
   .btn-registrar-perseo:hover{background:var(--warn-lt);}
-
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow);}
   .card-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
   .form-row{display:flex;gap:10px;flex-wrap:wrap;}
@@ -64,7 +60,6 @@
   .form-group label{font-size:11px;font-weight:500;color:var(--muted);}
   .form-group input,.form-group select{border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);width:100%;}
   .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-
   .search-row{display:flex;gap:8px;margin-bottom:10px;}
   .search-row input{flex:1;border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;}
   .search-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
@@ -74,7 +69,6 @@
   .sug-item:last-child{border-bottom:none;}
   .sug-item:hover{background:var(--accent-lt);}
   .sug-code{font-family:'DM Mono',monospace;color:var(--muted);font-size:11px;}
-
   .btn{padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;}
   .btn-primary{background:var(--accent);color:#fff;}
   .btn-primary:hover{background:#1d4ed8;}
@@ -89,7 +83,6 @@
   .btn-ghost:hover{background:var(--bg);}
   .btn-danger-sm{padding:3px 8px;border-radius:5px;font-size:11px;background:transparent;color:var(--danger);border:1px solid #fca5a5;cursor:pointer;font-family:inherit;}
   .btn-danger-sm:hover{background:#fef2f2;}
-
   .table-wrap{overflow-x:auto;}
   table{width:100%;border-collapse:collapse;font-size:12.5px;}
   thead th{background:var(--bg);padding:7px 8px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
@@ -106,17 +99,14 @@
   .stock-ok{color:var(--ok);}
   .stock-warn{color:var(--warn);}
   .stock-zero{color:var(--danger);}
-
   .totales-row{display:flex;justify-content:flex-end;gap:24px;padding:12px 8px 4px;border-top:1px solid var(--border);margin-top:4px;}
   .total-item{text-align:right;}
   .total-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
   .total-value{font-size:16px;font-weight:600;font-family:'DM Mono',monospace;}
   .total-value.grand{font-size:20px;color:var(--accent);}
-
   .empty-state{text-align:center;padding:32px 16px;color:var(--muted);}
   .empty-icon{font-size:30px;margin-bottom:8px;}
   .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap;}
-
   .toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:999;display:none;}
   .toast.ok{background:var(--ok);color:#fff;display:block;}
   .toast.error{background:var(--danger);color:#fff;display:block;}
@@ -132,7 +122,6 @@
 </head>
 <body>
 <div class="shell">
-
   <div id="screenBuscar" class="buscar-screen">
     <div class="buscar-box">
       <h2>Nuevo Pedido</h2>
@@ -156,7 +145,6 @@
       <span class="modo-badge" id="modoBadge">Nuevo pedido</span>
       <span class="cambiar-cuenta" onclick="volverBusqueda()">Cambiar cuenta</span>
     </div>
-
     <div class="card">
       <div class="card-title">Datos del trato</div>
       <div class="form-row">
@@ -208,7 +196,6 @@
         </div>
       </div>
     </div>
-
     <div class="card" id="seccionProductos">
       <div class="card-title">Productos</div>
       <div class="search-row">
@@ -242,7 +229,6 @@
         <div class="total-item"><div class="total-label">Total</div><div class="total-value grand" id="tTotal">$0.00</div></div>
       </div>
     </div>
-
     <div class="actions" id="accionesBar"></div>
   </div>
 </div>
@@ -265,8 +251,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbz217zRenxCu3U56MM_-kwXDu3XHd4_1MPH7nDXhVohm9TUCiaTDWUlsL6mIDvLR-MtLw/exec';
-var INITIAL_ACCOUNT_ID = '';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz217zRenxCu3U56MM_-kwXDu3XHd4_1MPH7nDXhVohm9TUCiaTDWUlsL6mIDvLR-MtLw/exec';
 
 var cuenta       = {};
 var cuentaId     = '';
@@ -279,24 +264,20 @@ var tratoSeleccionado = null;
 var timeoutBusq  = null;
 var timeoutCuenta= null;
 
-// =====================================================================
-// API
-// =====================================================================
 function api(action, params) {
-  var url = API_URL + '?action=' + encodeURIComponent(action);
+  var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
   Object.keys(params || {}).forEach(function(k) {
     url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k] || '');
   });
-  return fetch(url).then(function(r) { return r.json(); });
+  return fetch(url, { redirect: 'follow' }).then(function(r) { return r.json(); });
 }
 
 function apiPost(action, body) {
-  // Usar GET con lineas como JSON string para evitar problemas CORS con POST
   var params = Object.assign({ action: action }, body || {});
   if (params.lineas && Array.isArray(params.lineas)) {
     params.lineas = JSON.stringify(params.lineas);
   }
-  var url = API_URL;
+  var url = SCRIPT_URL;
   var first = true;
   Object.keys(params).forEach(function(k) {
     var val = params[k];
@@ -304,20 +285,16 @@ function apiPost(action, body) {
     url += (first ? '?' : '&') + encodeURIComponent(k) + '=' + encodeURIComponent(typeof val === 'object' ? JSON.stringify(val) : val);
     first = false;
   });
-  return fetch(url).then(function(r) { return r.json(); });
+  return fetch(url, { redirect: 'follow' }).then(function(r) { return r.json(); });
 }
 
-// =====================================================================
-// INIT
-// =====================================================================
 window.addEventListener('load', function() {
   setFechaDefault();
   renderTabla();
   setupBuscarCuenta();
 
-  // Leer accountId de la URL si viene desde Zoho
   var urlParams = new URLSearchParams(window.location.search);
-  var aid = urlParams.get('accountId') || urlParams.get('account_id') || INITIAL_ACCOUNT_ID;
+  var aid = urlParams.get('accountId') || urlParams.get('account_id') || '';
 
   if (aid) {
     mostrarOverlay('Cargando datos del cliente...');
@@ -342,9 +319,6 @@ window.addEventListener('load', function() {
   }
 });
 
-// =====================================================================
-// BUSCAR CUENTA
-// =====================================================================
 function setupBuscarCuenta() {
   var input = document.getElementById('inputBuscarCuenta');
   input.addEventListener('input', function() {
@@ -386,7 +360,6 @@ function seleccionarCuenta(id, nombre) {
   document.getElementById('inputBuscarCuenta').value = nombre;
   cuentaId = String(id);
   mostrarOverlay('Cargando datos del cliente...');
-
   api('get_cuenta', { accountId: id })
     .then(function(r) {
       if (!r || !r.ok) { ocultarOverlay(); showToast('No se pudo cargar la cuenta', 'error'); return; }
@@ -416,9 +389,6 @@ function volverBusqueda() {
   limpiarBtnDescarga();
 }
 
-// =====================================================================
-// MODAL TRATOS DEL MES
-// =====================================================================
 function mostrarModalTratos(cuentaData, tratos) {
   var lista = document.getElementById('tratoLista');
   tratoSeleccionado = null;
@@ -445,15 +415,12 @@ function modalTratosAbrir() {
   if (!tratoSeleccionado) { showToast('Selecciona un trato de la lista', 'warn'); return; }
   document.getElementById('modalTratos').classList.add('hidden');
   mostrarOverlay('Cargando pedido existente...');
-
   api('get_trato', { dealId: tratoSeleccionado.id })
     .then(function(r) {
       ocultarOverlay();
       if (!r || !r.ok) { showToast('Error al cargar el trato', 'error'); return; }
-
       tratoId = tratoSeleccionado.id;
       modo = 'editar';
-
       if (r.trato) {
         document.getElementById('tratoNombre').value        = r.trato.nombre || '';
         document.getElementById('fechaCierre').value        = r.trato.fechaCierre || '';
@@ -462,7 +429,6 @@ function modalTratosAbrir() {
         document.getElementById('tratoFase').value          = r.trato.fase || 'Cotizacion de propuesta/precio';
         document.getElementById('tratoClasificacion').value = r.trato.clasificacion || '';
       }
-
       lineas = (r.lineas || []).map(function(l) {
         return {
           productoId:  l.productoId || '',
@@ -477,9 +443,7 @@ function modalTratosAbrir() {
           total:       r2(Number(l.precioFinal || 0) * Number(l.cantidad || 1))
         };
       });
-
       if (r.cuenta) cuenta = r.cuenta;
-
       mostrarPantallaFormulario();
       renderCliente();
       renderTabla();
@@ -516,15 +480,11 @@ function siguienteNombreDisponible(nombreBase, tratos) {
   return nombreBase + ' (' + (maxNum + 1) + ')';
 }
 
-// =====================================================================
-// INICIAR FORMULARIO
-// =====================================================================
 function iniciarFormularioNuevo(cuentaData, nombreSugerido) {
   tratoId = null;
   modo = 'crear_con_pedido';
   lineas = [];
   cuenta = cuentaData || cuenta;
-
   var nombre = nombreSugerido || generarNombreBase(cuenta);
   document.getElementById('tratoNombre').value = nombre;
   document.getElementById('ordenCompra').value = '';
@@ -532,7 +492,6 @@ function iniciarFormularioNuevo(cuentaData, nombreSugerido) {
   document.getElementById('tratoClasificacion').value = '';
   document.getElementById('tratoFase').value = 'Cotizacion de propuesta/precio';
   setFechaDefault();
-
   mostrarPantallaFormulario();
   renderCliente();
   renderTabla();
@@ -546,9 +505,6 @@ function mostrarPantallaFormulario() {
   renderAcciones();
 }
 
-// =====================================================================
-// CATALOGO
-// =====================================================================
 function cargarCatalogo() {
   mostrarOverlay('Cargando catalogo...');
   api('get_catalogo_rapido', {})
@@ -568,23 +524,17 @@ function cargarCatalogo() {
     .catch(function(e) { ocultarOverlay(); showToast('Error catalogo: ' + e, 'warn'); });
 }
 
-// =====================================================================
-// RENDER
-// =====================================================================
 function renderCliente() {
   var nombre   = cuenta.Account_Name || cuenta.nombre || 'Cuenta';
   var perseoId = cuenta.ID_Cliente_Perseo || cuenta.perseoId || '';
   document.getElementById('clienteAvatar').textContent = nombre.charAt(0).toUpperCase();
   document.getElementById('clienteNombre').textContent = nombre;
-
   var meta = [];
   if (cuenta.Phone || cuenta.telefono) meta.push(cuenta.Phone || cuenta.telefono);
   if (perseoId) meta.push('Perseo: ' + perseoId);
   document.getElementById('clienteMeta').textContent = meta.join('  -  ');
-
   var badge  = document.getElementById('clienteBadge');
   var btnReg = document.getElementById('btnRegistrarPerseo');
-
   if (perseoId) {
     badge.textContent = 'Perseo OK';
     badge.className = 'badge badge-ok';
@@ -595,7 +545,6 @@ function renderCliente() {
     badge.className = 'badge badge-info';
     badge.style.display = 'inline-flex';
     btnReg.style.display = 'none';
-
     var aid = cuentaId || String(cuenta.id || '');
     api('sincronizar_cliente', { accountId: aid })
       .then(function(r) {
@@ -656,9 +605,6 @@ function renderAcciones() {
 
 function cambiarModo(m) { modo = m; renderModoBadge(); renderAcciones(); renderTabla(); }
 
-// =====================================================================
-// BUSQUEDA PRODUCTOS
-// =====================================================================
 document.getElementById('busquedaProducto').addEventListener('input', function() {
   clearTimeout(timeoutBusq);
   var q = this.value.trim();
@@ -684,9 +630,6 @@ function mostrarSug(q) {
 function ocultarSug() { document.getElementById('suggestions').style.display = 'none'; }
 function limpiarBusqueda() { document.getElementById('busquedaProducto').value = ''; ocultarSug(); }
 
-// =====================================================================
-// LINEAS
-// =====================================================================
 function agregarProducto(id) {
   ocultarSug(); limpiarBusqueda();
   var p = null;
@@ -739,16 +682,11 @@ function actualizarTotales() {
   document.getElementById('tTotal').textContent = '$' + r2(sub + iva).toFixed(2);
 }
 
-// =====================================================================
-// GUARDAR
-// =====================================================================
 function guardar(accion) {
   var nombre = document.getElementById('tratoNombre').value.trim();
   if (!nombre) { showToast('Escribe el nombre del trato.', 'error'); return; }
   if (accion !== 'solo_trato' && !lineas.length) { showToast('Agrega al menos un producto.', 'error'); return; }
-
   var aid = cuentaId || String(cuenta.id || '');
-
   if (accion === 'proforma') {
     if (!tratoId) {
       ejecutarGuardado('trato_y_pedido', aid, function(savedTratoId) {
@@ -759,7 +697,6 @@ function guardar(accion) {
     }
     return;
   }
-
   if (accion === 'enviar_perseo') {
     if (!tratoId) { showToast('Primero guarda el pedido antes de enviarlo a Perseo.', 'error'); return; }
     mostrarOverlay('Enviando a Perseo...');
@@ -773,7 +710,6 @@ function guardar(accion) {
       .catch(function(e) { ocultarOverlay(); deshabilitarBotones(false); showToast('Error: ' + e, 'error'); });
     return;
   }
-
   ejecutarGuardado(accion, aid, null);
 }
 
@@ -794,11 +730,9 @@ function ejecutarGuardado(accion, aid, callback) {
     }) : []
   };
   if (tratoId) payload.tratoId = tratoId;
-
   var msgs = { solo_trato: 'Creando trato...', trato_y_pedido: 'Guardando pedido...', actualizar: 'Actualizando pedido...' };
   mostrarOverlay(msgs[accion] || 'Procesando...');
   deshabilitarBotones(true);
-
   apiPost('crear_pedido_widget', payload)
     .then(function(data) {
       ocultarOverlay(); deshabilitarBotones(false);
@@ -853,9 +787,6 @@ function deshabilitarBotones(v) {
   ['btnGuardar','btnProforma','btnPerseo'].forEach(function(id) { var b = document.getElementById(id); if (b) b.disabled = v; });
 }
 
-// =====================================================================
-// REGISTRAR CLIENTE EN PERSEO
-// =====================================================================
 function registrarEnPerseo() {
   var aid = cuentaId || String(cuenta.id || '');
   if (!aid) { showToast('No hay cuenta seleccionada', 'error'); return; }
@@ -887,9 +818,6 @@ function registrarEnPerseo() {
     .catch(function(e) { ocultarOverlay(); showToast('Error: ' + e, 'error'); });
 }
 
-// =====================================================================
-// UTILIDADES
-// =====================================================================
 function resetFormulario() { lineas = []; document.getElementById('tratoNombre').value = ''; document.getElementById('ordenCompra').value = ''; document.getElementById('tratoTipo').value = ''; document.getElementById('tratoClasificacion').value = ''; setFechaDefault(); limpiarBtnDescarga(); renderTabla(); }
 function setFechaDefault() { var d = new Date(Date.now() + 30*24*60*60*1000); document.getElementById('fechaCierre').value = d.toISOString().slice(0,10); }
 function showToast(msg, tipo) { var t = document.getElementById('toast'); t.className = 'toast ' + tipo; t.textContent = msg; setTimeout(function() { t.className = 'toast'; }, 5000); }
