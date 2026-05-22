@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pedido Comercial</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#f4f5f7;--surface:#fff;--border:#e2e5ea;--border2:#c8cdd6;
+    --text:#1a1d23;--muted:#6b7280;--accent:#2563eb;--accent-lt:#eff4ff;
+    --danger:#dc2626;--ok:#16a34a;--ok-lt:#f0fdf4;--warn:#d97706;--warn-lt:#fffbeb;
+    --row-alt:#f9fafb;--shadow:0 1px 3px rgba(0,0,0,.08);--radius:8px;
+    font-family:'DM Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;}
+  .shell{max-width:1040px;margin:0 auto;padding:16px;}
+
+  .buscar-screen{min-height:60vh;display:flex;align-items:center;justify-content:center;}
+  .buscar-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:480px;box-shadow:var(--shadow);text-align:center;}
+  .buscar-box h2{font-size:18px;font-weight:600;margin-bottom:6px;}
+  .buscar-box p{color:var(--muted);font-size:12.5px;margin-bottom:20px;}
+  .buscar-input-wrap{position:relative;}
+  .buscar-input-wrap input{width:100%;border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;}
+  .buscar-input-wrap input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+  .cuenta-sug{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:99;max-height:220px;overflow-y:auto;display:none;text-align:left;}
+  .cuenta-sug-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);}
+  .cuenta-sug-item:last-child{border-bottom:none;}
+  .cuenta-sug-item:hover{background:var(--accent-lt);}
+  .cuenta-sug-nombre{font-weight:500;}
+  .cuenta-sug-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:300;}
+  .modal-box{background:var(--surface);border-radius:12px;padding:24px;max-width:500px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+  .modal-box h3{font-size:15px;font-weight:600;margin-bottom:6px;}
+  .modal-box p{color:var(--muted);font-size:12.5px;margin-bottom:14px;}
+  .trato-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;max-height:200px;overflow-y:auto;}
+  .trato-item{border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .15s;}
+  .trato-item:hover{border-color:var(--accent);background:var(--accent-lt);}
+  .trato-item.selected{border-color:var(--accent);background:var(--accent-lt);}
+  .trato-item-nombre{font-weight:500;font-size:13px;}
+  .trato-item-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
+
+  .cliente-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .cliente-avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .cliente-info{flex:1;min-width:0;}
+  .cliente-nombre{font-size:15px;font-weight:600;}
+  .cliente-meta{color:var(--muted);font-size:11.5px;font-family:'DM Mono',monospace;margin-top:1px;}
+  .badge{font-size:10.5px;font-weight:500;padding:3px 8px;border-radius:20px;white-space:nowrap;}
+  .badge-ok{background:var(--ok-lt);color:var(--ok);}
+  .badge-warn{background:var(--warn-lt);color:var(--warn);}
+  .badge-info{background:var(--accent-lt);color:var(--accent);}
+  .modo-badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--accent-lt);color:var(--accent);white-space:nowrap;}
+  .cambiar-cuenta{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;margin-left:8px;}
+  .btn-registrar-perseo{font-size:11px;padding:4px 10px;border-radius:20px;background:#fff;color:var(--warn);border:1px solid var(--warn);cursor:pointer;font-family:inherit;font-weight:500;white-space:nowrap;}
+  .btn-registrar-perseo:hover{background:var(--warn-lt);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow);}
+  .card-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .form-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .form-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;}
+  .form-group label{font-size:11px;font-weight:500;color:var(--muted);}
+  .form-group input,.form-group select{border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);width:100%;}
+  .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+
+  .search-row{display:flex;gap:8px;margin-bottom:10px;}
+  .search-row input{flex:1;border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;}
+  .search-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+  .dropdown-wrap{position:relative;flex:1;}
+  .suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:99;max-height:200px;overflow-y:auto;display:none;}
+  .sug-item{padding:7px 10px;cursor:pointer;font-size:12.5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;}
+  .sug-item:last-child{border-bottom:none;}
+  .sug-item:hover{background:var(--accent-lt);}
+  .sug-code{font-family:'DM Mono',monospace;color:var(--muted);font-size:11px;}
+
+  .btn{padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:#1d4ed8;}
+  .btn-primary:disabled{background:#9cb3ef;cursor:not-allowed;}
+  .btn-success{background:var(--ok);color:#fff;}
+  .btn-success:hover{background:#15803d;}
+  .btn-success:disabled{background:#86efac;cursor:not-allowed;}
+  .btn-warn{background:var(--warn);color:#fff;}
+  .btn-warn:hover{background:#b45309;}
+  .btn-warn:disabled{background:#fcd34d;cursor:not-allowed;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);}
+  .btn-ghost:hover{background:var(--bg);}
+  .btn-danger-sm{padding:3px 8px;border-radius:5px;font-size:11px;background:transparent;color:var(--danger);border:1px solid #fca5a5;cursor:pointer;font-family:inherit;}
+  .btn-danger-sm:hover{background:#fef2f2;}
+
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{background:var(--bg);padding:7px 8px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);}
+  tbody tr:nth-child(even){background:var(--row-alt);}
+  tbody td{padding:6px 8px;vertical-align:middle;}
+  .td-producto{min-width:200px;font-weight:500;}
+  .td-codigo{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+  .td-num{width:80px;}
+  .td-num input{width:100%;border:1px solid var(--border2);border-radius:5px;padding:5px 7px;font-size:12.5px;text-align:right;font-family:'DM Mono',monospace;background:var(--surface);color:var(--text);}
+  .td-num input:focus{outline:none;border-color:var(--accent);}
+  .td-total{font-family:'DM Mono',monospace;font-weight:600;}
+  .td-iva{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+  .stock-ok{color:var(--ok);}
+  .stock-warn{color:var(--warn);}
+  .stock-zero{color:var(--danger);}
+
+  .totales-row{display:flex;justify-content:flex-end;gap:24px;padding:12px 8px 4px;border-top:1px solid var(--border);margin-top:4px;}
+  .total-item{text-align:right;}
+  .total-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .total-value{font-size:16px;font-weight:600;font-family:'DM Mono',monospace;}
+  .total-value.grand{font-size:20px;color:var(--accent);}
+
+  .empty-state{text-align:center;padding:32px 16px;color:var(--muted);}
+  .empty-icon{font-size:30px;margin-bottom:8px;}
+  .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap;}
+
+  .toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:999;display:none;}
+  .toast.ok{background:var(--ok);color:#fff;display:block;}
+  .toast.error{background:var(--danger);color:#fff;display:block;}
+  .toast.warn{background:var(--warn);color:#fff;display:block;}
+  .overlay{position:fixed;inset:0;background:rgba(244,245,247,.75);display:none;align-items:center;justify-content:center;z-index:200;}
+  .overlay.active{display:flex;}
+  .loading-box{background:var(--surface);padding:20px 28px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);text-align:center;}
+  .loading-box p{margin-top:8px;color:var(--muted);font-size:13px;}
+  .big-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div id="screenBuscar" class="buscar-screen">
+    <div class="buscar-box">
+      <h2>Nuevo Pedido</h2>
+      <p>Escribe el nombre de la cuenta del cliente para comenzar</p>
+      <div class="buscar-input-wrap">
+        <input type="text" id="inputBuscarCuenta" placeholder="Buscar cuenta..." autocomplete="off"/>
+        <div class="cuenta-sug" id="cuentaSug"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screenPedido" class="hidden">
+    <div class="cliente-card">
+      <div class="cliente-avatar" id="clienteAvatar">?</div>
+      <div class="cliente-info">
+        <div class="cliente-nombre" id="clienteNombre">-</div>
+        <div class="cliente-meta" id="clienteMeta"></div>
+      </div>
+      <span class="badge badge-warn" id="clienteBadge" style="display:none">Sin ID Perseo</span>
+      <button class="btn-registrar-perseo" id="btnRegistrarPerseo" style="display:none" onclick="registrarEnPerseo()">+ Registrar en Perseo</button>
+      <span class="modo-badge" id="modoBadge">Nuevo pedido</span>
+      <span class="cambiar-cuenta" onclick="volverBusqueda()">Cambiar cuenta</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Datos del trato</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2;min-width:220px">
+          <label>Nombre del trato *</label>
+          <input type="text" id="tratoNombre"/>
+        </div>
+        <div class="form-group">
+          <label>Fecha de cierre</label>
+          <input type="date" id="fechaCierre"/>
+        </div>
+        <div class="form-group">
+          <label>N Orden de compra</label>
+          <input type="text" id="ordenCompra" placeholder="Ej. 5649"/>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="tratoTipo">
+            <option value="">-Ninguno-</option>
+            <option value="Negocios existentes">Negocios existentes</option>
+            <option value="Nuevo negocio">Nuevo negocio</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Clasificacion</label>
+          <select id="tratoClasificacion">
+            <option value="">-Ninguno-</option>
+            <option value="Pedidos en linea">Pedidos en linea</option>
+            <option value="Mayorista">Mayorista</option>
+            <option value="Restaurante">Restaurante</option>
+            <option value="Clinica">Clinica</option>
+            <option value="Hospital">Hospital</option>
+            <option value="Consultorio">Consultorio</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fase</label>
+          <select id="tratoFase">
+            <option value="Clasificación">Clasificación</option>
+            <option value="Necesita análisis">Necesita análisis</option>
+            <option value="Propuesta de valor">Propuesta de valor</option>
+            <option value="Identificar responsables">Identificar responsables</option>
+            <option value="Cotización de propuesta/precio" selected>Cotización de propuesta/precio</option>
+            <option value="Negociación/revisión">Negociación/revisión</option>
+            <option value="Cerrado ganado">Cerrado ganado</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="seccionProductos">
+      <div class="card-title">Productos</div>
+      <div class="search-row">
+        <div class="dropdown-wrap">
+          <input type="text" id="busquedaProducto" placeholder="Buscar por nombre o codigo..." autocomplete="off"/>
+          <div class="suggestions" id="suggestions"></div>
+        </div>
+        <button class="btn btn-ghost" onclick="limpiarBusqueda()">Limpiar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th><th>Codigo</th>
+              <th style="text-align:center">Stock</th>
+              <th style="text-align:right">Precio unit.</th>
+              <th style="text-align:right">Desc. %</th>
+              <th style="text-align:right">Precio final</th>
+              <th style="text-align:right">Cant.</th>
+              <th style="text-align:right">IVA %</th>
+              <th style="text-align:right">Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="lineasBody"></tbody>
+        </table>
+      </div>
+      <div class="totales-row">
+        <div class="total-item"><div class="total-label">Subtotal</div><div class="total-value" id="tSubtotal">$0.00</div></div>
+        <div class="total-item"><div class="total-label">IVA</div><div class="total-value" id="tIva">$0.00</div></div>
+        <div class="total-item"><div class="total-label">Total</div><div class="total-value grand" id="tTotal">$0.00</div></div>
+      </div>
+    </div>
+
+    <div class="actions" id="accionesBar"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalTratos">
+  <div class="modal-box">
+    <h3>Pedidos de este mes</h3>
+    <p id="modalTratosMsg">Ya tienes pedidos este mes para esta cuenta. Selecciona uno para editarlo o crea uno nuevo.</p>
+    <div class="trato-lista" id="tratoLista"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="modalTratosCrearNuevo()">Crear nuevo</button>
+      <button class="btn btn-primary" id="btnModalAbrirTrato" onclick="modalTratosAbrir()">Abrir seleccionado</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="loading-box"><div class="big-spinner"></div><p id="overlayMsg">Procesando...</p></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// URL base del script - sin /u/X/ para funcionar con cualquier cuenta
+var API_URL = 'https://script.google.com/macros/s/AKfycbz217zRenxCu3U56MM_-kwXDu3XHd4_1MPH7nDXhVohm9TUCiaTDWUlsL6mIDvLR-MtLw/exec';
+var INITIAL_ACCOUNT_ID = '<?= initialAccountId ?>';
+
+var cuenta       = {};
+var cuentaId     = '';
+var lineas       = [];
+var catalogo     = [];
+var tratoId      = null;
+var modo         = 'crear_con_pedido';
+var tratosDelMes = [];
+var tratoSeleccionado = null;
+var timeoutBusq  = null;
+var timeoutCuenta= null;
+
+// =====================================================================
+// API - reemplaza google.script.run con fetch
+// =====================================================================
+function api(action, params) {
+  var url = API_URL + '?action=' + encodeURIComponent(action);
+  Object.keys(params || {}).forEach(function(k) {
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k] || '');
+  });
+  return fetch(url).then(function(r) { return r.json(); });
+}
+
+function apiPost(action, body) {
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ action: action }, body || {}))
+  }).then(function(r) { return r.json(); });
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+window.addEventListener('load', function() {
+  setFechaDefault();
+  renderTabla();
+  setupBuscarCuenta();
+
+  if (INITIAL_ACCOUNT_ID) {
+    mostrarOverlay('Cargando datos del cliente...');
+    api('get_cuenta', { accountId: INITIAL_ACCOUNT_ID })
+      .then(function(r) {
+        if (!r || !r.ok) { ocultarOverlay(); return; }
+        cuenta = r.cuenta;
+        cuentaId = String(r.cuenta.id);
+        return api('get_tratos_mes', { accountId: cuentaId });
+      })
+      .then(function(rt) {
+        ocultarOverlay();
+        if (!rt) return;
+        tratosDelMes = (rt.ok && rt.tratos) ? rt.tratos : [];
+        if (tratosDelMes.length > 0) {
+          mostrarModalTratos(cuenta, tratosDelMes);
+        } else {
+          iniciarFormularioNuevo(cuenta);
+        }
+      })
+      .catch(function() { ocultarOverlay(); });
+  }
+});
+
+// =====================================================================
+// BUSCAR CUENTA
+// =====================================================================
+function setupBuscarCuenta() {
+  var input = document.getElementById('inputBuscarCuenta');
+  input.addEventListener('input', function() {
+    clearTimeout(timeoutCuenta);
+    var q = this.value.trim();
+    if (q.length < 2) { ocultarCuentaSug(); return; }
+    var qc = q;
+    timeoutCuenta = setTimeout(function() { buscarCuentas(qc); }, 350);
+  });
+  input.addEventListener('blur', function() { setTimeout(ocultarCuentaSug, 200); });
+}
+
+function buscarCuentas(q) {
+  var box = document.getElementById('cuentaSug');
+  box.innerHTML = '<div class="cuenta-sug-item" style="color:var(--muted)">Buscando...</div>';
+  box.style.display = 'block';
+  api('buscar_cuentas', { q: q })
+    .then(function(r) {
+      if (!r || !r.ok || !r.cuentas || !r.cuentas.length) {
+        box.innerHTML = '<div class="cuenta-sug-item" style="color:var(--muted)">No se encontraron cuentas</div>';
+        return;
+      }
+      box.innerHTML = r.cuentas.map(function(c) {
+        return '<div class="cuenta-sug-item" onclick="seleccionarCuenta(\'' + c.id + '\',\'' + escH(c.nombre) + '\')">' +
+          '<div class="cuenta-sug-nombre">' + escH(c.nombre) + '</div>' +
+          '<div class="cuenta-sug-meta">' + (c.identificacion || '') + (c.perseoId ? ' - Perseo OK' : ' - Sin ID Perseo') + '</div>' +
+        '</div>';
+      }).join('');
+    })
+    .catch(function(e) {
+      box.innerHTML = '<div class="cuenta-sug-item" style="color:var(--danger)">Error: ' + e + '</div>';
+    });
+}
+
+function ocultarCuentaSug() { document.getElementById('cuentaSug').style.display = 'none'; }
+
+function seleccionarCuenta(id, nombre) {
+  ocultarCuentaSug();
+  document.getElementById('inputBuscarCuenta').value = nombre;
+  cuentaId = String(id);
+  mostrarOverlay('Cargando datos del cliente...');
+
+  api('get_cuenta', { accountId: id })
+    .then(function(r) {
+      if (!r || !r.ok) { ocultarOverlay(); showToast('No se pudo cargar la cuenta', 'error'); return; }
+      cuenta = r.cuenta;
+      cuentaId = String(r.cuenta.id || id);
+      return api('get_tratos_mes', { accountId: cuentaId });
+    })
+    .then(function(rt) {
+      ocultarOverlay();
+      if (!rt) return;
+      tratosDelMes = (rt.ok && rt.tratos) ? rt.tratos : [];
+      if (tratosDelMes.length > 0) {
+        mostrarModalTratos(cuenta, tratosDelMes);
+      } else {
+        iniciarFormularioNuevo(cuenta);
+      }
+    })
+    .catch(function(e) { ocultarOverlay(); showToast('Error: ' + e, 'error'); });
+}
+
+function volverBusqueda() {
+  cuenta = {}; cuentaId = ''; lineas = []; tratoId = null; modo = 'crear_con_pedido';
+  tratosDelMes = []; tratoSeleccionado = null;
+  document.getElementById('screenPedido').classList.add('hidden');
+  document.getElementById('screenBuscar').classList.remove('hidden');
+  document.getElementById('inputBuscarCuenta').value = '';
+  limpiarBtnDescarga();
+}
+
+// =====================================================================
+// MODAL TRATOS DEL MES
+// =====================================================================
+function mostrarModalTratos(cuentaData, tratos) {
+  var lista = document.getElementById('tratoLista');
+  tratoSeleccionado = null;
+  lista.innerHTML = tratos.map(function(t, i) {
+    return '<div class="trato-item" id="tratoItem' + i + '" onclick="seleccionarTratoItem(' + i + ')">' +
+      '<div class="trato-item-nombre">' + escH(t.nombre) + '</div>' +
+      '<div class="trato-item-meta">Fase: ' + escH(t.fase) + '</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('modalTratos').classList.remove('hidden');
+}
+
+function seleccionarTratoItem(idx) {
+  for (var i = 0; i < tratosDelMes.length; i++) {
+    var el = document.getElementById('tratoItem' + i);
+    if (el) el.classList.remove('selected');
+  }
+  var sel = document.getElementById('tratoItem' + idx);
+  if (sel) sel.classList.add('selected');
+  tratoSeleccionado = tratosDelMes[idx];
+}
+
+function modalTratosAbrir() {
+  if (!tratoSeleccionado) { showToast('Selecciona un trato de la lista', 'warn'); return; }
+  document.getElementById('modalTratos').classList.add('hidden');
+  mostrarOverlay('Cargando pedido existente...');
+
+  api('get_trato', { dealId: tratoSeleccionado.id })
+    .then(function(r) {
+      ocultarOverlay();
+      if (!r || !r.ok) { showToast('Error al cargar el trato', 'error'); return; }
+
+      tratoId = tratoSeleccionado.id;
+      modo = 'editar';
+
+      if (r.trato) {
+        document.getElementById('tratoNombre').value        = r.trato.nombre || '';
+        document.getElementById('fechaCierre').value        = r.trato.fechaCierre || '';
+        document.getElementById('ordenCompra').value        = r.trato.ordenCompra || '';
+        document.getElementById('tratoTipo').value          = r.trato.tipo || '';
+        document.getElementById('tratoFase').value          = r.trato.fase || 'Cotizacion de propuesta/precio';
+        document.getElementById('tratoClasificacion').value = r.trato.clasificacion || '';
+      }
+
+      lineas = (r.lineas || []).map(function(l) {
+        return {
+          productoId:  l.productoId || '',
+          nombre:      l.nombre || '',
+          codigo:      l.codigo || '',
+          stock:       Number(l.stock || 0),
+          precioUnit:  Number(l.precioUnit || 0),
+          descuento:   Number(l.descuento || 0),
+          precioFinal: Number(l.precioFinal || 0),
+          cantidad:    Number(l.cantidad || 1),
+          iva:         Number(l.iva || 0),
+          total:       r2(Number(l.precioFinal || 0) * Number(l.cantidad || 1))
+        };
+      });
+
+      if (r.cuenta) cuenta = r.cuenta;
+
+      mostrarPantallaFormulario();
+      renderCliente();
+      renderTabla();
+      cargarCatalogo();
+    })
+    .catch(function(e) { ocultarOverlay(); showToast('Error: ' + e, 'error'); });
+}
+
+function modalTratosCrearNuevo() {
+  document.getElementById('modalTratos').classList.add('hidden');
+  var nombreBase = generarNombreBase(cuenta);
+  var nombreSugerido = siguienteNombreDisponible(nombreBase, tratosDelMes);
+  iniciarFormularioNuevo(cuenta, nombreSugerido);
+}
+
+function generarNombreBase(cuentaData) {
+  var nombre = cuentaData ? (cuentaData.Account_Name || cuentaData.nombre || '') : '';
+  var hoy = new Date();
+  var mes = hoy.toLocaleString('es', {month: 'long'});
+  return 'Pedido ' + capitalizar(mes) + ' ' + hoy.getFullYear() + ' - ' + nombre;
+}
+
+function siguienteNombreDisponible(nombreBase, tratos) {
+  var nombresExistentes = tratos.map(function(t) { return t.nombre; });
+  if (nombresExistentes.indexOf(nombreBase) === -1) return nombreBase;
+  var maxNum = 1;
+  for (var i = 0; i < nombresExistentes.length; i++) {
+    var n = nombresExistentes[i];
+    var match = n.match(/\((\d+)\)/);
+    if (match) { var num = parseInt(match[1]); if (num > maxNum) maxNum = num; }
+  }
+  var idx = nombreBase.indexOf(' - ');
+  if (idx > -1) return nombreBase.substring(0, idx) + ' (' + (maxNum + 1) + ')' + nombreBase.substring(idx);
+  return nombreBase + ' (' + (maxNum + 1) + ')';
+}
+
+// =====================================================================
+// INICIAR FORMULARIO
+// =====================================================================
+function iniciarFormularioNuevo(cuentaData, nombreSugerido) {
+  tratoId = null;
+  modo = 'crear_con_pedido';
+  lineas = [];
+  cuenta = cuentaData || cuenta;
+
+  var nombre = nombreSugerido || generarNombreBase(cuenta);
+  document.getElementById('tratoNombre').value = nombre;
+  document.getElementById('ordenCompra').value = '';
+  document.getElementById('tratoTipo').value = '';
+  document.getElementById('tratoClasificacion').value = '';
+  document.getElementById('tratoFase').value = 'Cotizacion de propuesta/precio';
+  setFechaDefault();
+
+  mostrarPantallaFormulario();
+  renderCliente();
+  renderTabla();
+  cargarCatalogo();
+}
+
+function mostrarPantallaFormulario() {
+  document.getElementById('screenBuscar').classList.add('hidden');
+  document.getElementById('screenPedido').classList.remove('hidden');
+  renderModoBadge();
+  renderAcciones();
+}
+
+// =====================================================================
+// CATALOGO
+// =====================================================================
+function cargarCatalogo() {
+  mostrarOverlay('Cargando catalogo...');
+  api('get_catalogo_rapido', {})
+    .then(function(r) {
+      ocultarOverlay();
+      if (r && r.ok && r.productos) {
+        catalogo = r.productos;
+        api('get_iva_map', {}).then(function(ri) {
+          if (ri && ri.ok && ri.ivaMap) {
+            catalogo.forEach(function(p) {
+              if (p.productosid && ri.ivaMap[p.productosid] !== undefined) p.iva = ri.ivaMap[p.productosid];
+            });
+          }
+        }).catch(function() {});
+      }
+    })
+    .catch(function(e) { ocultarOverlay(); showToast('Error catalogo: ' + e, 'warn'); });
+}
+
+// =====================================================================
+// RENDER
+// =====================================================================
+function renderCliente() {
+  var nombre   = cuenta.Account_Name || cuenta.nombre || 'Cuenta';
+  var perseoId = cuenta.ID_Cliente_Perseo || cuenta.perseoId || '';
+  document.getElementById('clienteAvatar').textContent = nombre.charAt(0).toUpperCase();
+  document.getElementById('clienteNombre').textContent = nombre;
+
+  var meta = [];
+  if (cuenta.Phone || cuenta.telefono) meta.push(cuenta.Phone || cuenta.telefono);
+  if (perseoId) meta.push('Perseo: ' + perseoId);
+  document.getElementById('clienteMeta').textContent = meta.join('  -  ');
+
+  var badge  = document.getElementById('clienteBadge');
+  var btnReg = document.getElementById('btnRegistrarPerseo');
+
+  if (perseoId) {
+    badge.textContent = 'Perseo OK';
+    badge.className = 'badge badge-ok';
+    badge.style.display = 'inline-flex';
+    btnReg.style.display = 'none';
+  } else {
+    badge.textContent = 'Buscando en Perseo...';
+    badge.className = 'badge badge-info';
+    badge.style.display = 'inline-flex';
+    btnReg.style.display = 'none';
+
+    var aid = cuentaId || String(cuenta.id || '');
+    api('sincronizar_cliente', { accountId: aid })
+      .then(function(r) {
+        if (r && r.ok && r.encontrado && r.clientesid) {
+          cuenta.ID_Cliente_Perseo = r.clientesid;
+          cuenta.perseoId = r.clientesid;
+          badge.textContent = 'Perseo OK';
+          badge.className = 'badge badge-ok';
+          badge.style.display = 'inline-flex';
+          btnReg.style.display = 'none';
+          var metaActualizada = [];
+          if (cuenta.Phone || cuenta.telefono) metaActualizada.push(cuenta.Phone || cuenta.telefono);
+          metaActualizada.push('Perseo: ' + r.clientesid);
+          document.getElementById('clienteMeta').textContent = metaActualizada.join('  -  ');
+        } else {
+          badge.textContent = 'Sin ID Perseo';
+          badge.className = 'badge badge-warn';
+          badge.style.display = 'inline-flex';
+          btnReg.style.display = 'inline-flex';
+        }
+      })
+      .catch(function() {
+        badge.textContent = 'Sin ID Perseo';
+        badge.className = 'badge badge-warn';
+        badge.style.display = 'inline-flex';
+        btnReg.style.display = 'inline-flex';
+      });
+  }
+}
+
+function renderModoBadge() {
+  var b = document.getElementById('modoBadge');
+  if (modo === 'editar') { b.textContent = 'Editando pedido'; b.style.background = '#fef3c7'; b.style.color = '#92400e'; }
+  else if (modo === 'crear_sin_pedido') { b.textContent = 'Solo trato'; b.style.background = '#f0fdf4'; b.style.color = '#166534'; }
+  else { b.textContent = 'Nuevo pedido'; b.style.background = ''; b.style.color = ''; }
+}
+
+function renderAcciones() {
+  var bar = document.getElementById('accionesBar');
+  var sec = document.getElementById('seccionProductos');
+  if (modo === 'crear_sin_pedido') {
+    sec.classList.add('hidden');
+    bar.innerHTML = '<button class="btn btn-ghost" onclick="cambiarModo(\'crear_con_pedido\')">+ Agregar productos</button>' +
+      '<button class="btn btn-primary" id="btnGuardar" onclick="guardar(\'solo_trato\')">Crear trato</button>';
+  } else if (modo === 'crear_con_pedido') {
+    sec.classList.remove('hidden');
+    bar.innerHTML = '<button class="btn btn-ghost" onclick="cambiarModo(\'crear_sin_pedido\')">Solo crear trato</button>' +
+      '<button class="btn btn-primary" id="btnGuardar" onclick="guardar(\'trato_y_pedido\')">Guardar pedido</button>';
+  } else {
+    sec.classList.remove('hidden');
+    bar.innerHTML =
+      '<button class="btn btn-ghost" onclick="resetFormulario()">Descartar cambios</button>' +
+      '<button class="btn btn-primary" id="btnGuardar" onclick="guardar(\'actualizar\')">Guardar cambios</button>' +
+      '<button class="btn btn-success" id="btnProforma" onclick="guardar(\'proforma\')">Generar proforma</button>' +
+      '<button class="btn btn-warn" id="btnPerseo" onclick="guardar(\'enviar_perseo\')">Enviar a Perseo</button>';
+  }
+}
+
+function cambiarModo(m) { modo = m; renderModoBadge(); renderAcciones(); renderTabla(); }
+
+// =====================================================================
+// BUSQUEDA PRODUCTOS
+// =====================================================================
+document.getElementById('busquedaProducto').addEventListener('input', function() {
+  clearTimeout(timeoutBusq);
+  var q = this.value.trim();
+  if (q.length < 2) { ocultarSug(); return; }
+  var qc = q;
+  timeoutBusq = setTimeout(function() { mostrarSug(qc); }, 200);
+});
+document.getElementById('busquedaProducto').addEventListener('blur', function() { setTimeout(ocultarSug, 200); });
+
+function mostrarSug(q) {
+  var t = q.toLowerCase();
+  var m = catalogo.filter(function(p) { return p.nombre.toLowerCase().indexOf(t) > -1 || p.codigo.toLowerCase().indexOf(t) > -1; }).slice(0, 12);
+  var box = document.getElementById('suggestions');
+  if (!m.length) { ocultarSug(); return; }
+  box.innerHTML = m.map(function(p) {
+    var sc = p.stock > 10 ? 'stock-ok' : p.stock > 0 ? 'stock-warn' : 'stock-zero';
+    return '<div class="sug-item" onclick="agregarProducto(\'' + p.id + '\')">' +
+      '<span>' + escH(p.nombre) + ' <span class="sug-code">' + escH(p.codigo) + '</span></span>' +
+      '<span class="' + sc + '">' + p.stock + ' uds</span></div>';
+  }).join('');
+  box.style.display = 'block';
+}
+function ocultarSug() { document.getElementById('suggestions').style.display = 'none'; }
+function limpiarBusqueda() { document.getElementById('busquedaProducto').value = ''; ocultarSug(); }
+
+// =====================================================================
+// LINEAS
+// =====================================================================
+function agregarProducto(id) {
+  ocultarSug(); limpiarBusqueda();
+  var p = null;
+  for (var i = 0; i < catalogo.length; i++) { if (catalogo[i].id === id) { p = catalogo[i]; break; } }
+  if (!p) return;
+  for (var j = 0; j < lineas.length; j++) { if (lineas[j].productoId === id) { lineas[j].cantidad++; recalc(lineas[j]); renderTabla(); return; } }
+  var iva = parseInt(p.iva) || 0;
+  lineas.push({ productoId: p.id, nombre: p.nombre, codigo: p.codigo, stock: p.stock, precioUnit: p.precio, descuento: 0, precioFinal: p.precio, cantidad: 1, iva: iva, total: p.precio });
+  renderTabla();
+}
+function recalc(l) { l.precioFinal = r2(l.precioUnit * (1 - l.descuento / 100)); l.total = r2(l.precioFinal * l.cantidad); }
+function eliminarLinea(i) { lineas.splice(i, 1); renderTabla(); }
+function cambiarCantidad(i, v)    { lineas[i].cantidad = Math.max(0, Number(v)||0); lineas[i].total = r2(lineas[i].precioFinal * lineas[i].cantidad); renderTabla(); }
+function cambiarPrecioUnit(i, v)  { lineas[i].precioUnit = Math.max(0, Number(v)||0); recalc(lineas[i]); renderTabla(); }
+function cambiarDescuento(i, v)   { lineas[i].descuento = Math.max(0, Math.min(100, Number(v)||0)); recalc(lineas[i]); renderTabla(); }
+function cambiarPrecioFinal(i, v) { lineas[i].precioFinal = Math.max(0, Number(v)||0); lineas[i].total = r2(lineas[i].precioFinal * lineas[i].cantidad); renderTabla(); }
+
+function renderTabla() {
+  var tbody = document.getElementById('lineasBody');
+  if (!lineas.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📦</div><div>Busca y agrega productos arriba</div></div></td></tr>';
+    actualizarTotales(); return;
+  }
+  tbody.innerHTML = lineas.map(function(l, i) {
+    var sc = l.stock > 10 ? 'stock-ok' : l.stock > 0 ? 'stock-warn' : 'stock-zero';
+    return '<tr>' +
+      '<td class="td-producto">' + escH(l.nombre) + '</td>' +
+      '<td class="td-codigo">' + escH(l.codigo) + '</td>' +
+      '<td style="text-align:center" class="' + sc + '">' + l.stock + '</td>' +
+      '<td class="td-num"><input type="number" step="0.01" min="0" value="' + l.precioUnit + '" onchange="cambiarPrecioUnit(' + i + ',this.value)"/></td>' +
+      '<td class="td-num"><input type="number" step="1" min="0" max="100" value="' + l.descuento + '" onchange="cambiarDescuento(' + i + ',this.value)"/></td>' +
+      '<td class="td-num"><input type="number" step="0.01" min="0" value="' + l.precioFinal + '" onchange="cambiarPrecioFinal(' + i + ',this.value)"/></td>' +
+      '<td class="td-num"><input type="number" step="1" min="1" value="' + l.cantidad + '" onchange="cambiarCantidad(' + i + ',this.value)"/></td>' +
+      '<td class="td-iva">' + l.iva + '%</td>' +
+      '<td class="td-total">$' + l.total.toFixed(2) + '</td>' +
+      '<td><button class="btn-danger-sm" onclick="eliminarLinea(' + i + ')">X</button></td>' +
+    '</tr>';
+  }).join('');
+  actualizarTotales();
+}
+
+function actualizarTotales() {
+  var sub = 0, iva = 0;
+  for (var i = 0; i < lineas.length; i++) {
+    var s = r2(lineas[i].precioFinal * lineas[i].cantidad);
+    sub += s; iva += r2(s * lineas[i].iva / 100);
+  }
+  document.getElementById('tSubtotal').textContent = '$' + sub.toFixed(2);
+  document.getElementById('tIva').textContent = '$' + iva.toFixed(2);
+  document.getElementById('tTotal').textContent = '$' + r2(sub + iva).toFixed(2);
+}
+
+// =====================================================================
+// GUARDAR
+// =====================================================================
+function guardar(accion) {
+  var nombre = document.getElementById('tratoNombre').value.trim();
+  if (!nombre) { showToast('Escribe el nombre del trato.', 'error'); return; }
+  if (accion !== 'solo_trato' && !lineas.length) { showToast('Agrega al menos un producto.', 'error'); return; }
+
+  var aid = cuentaId || String(cuenta.id || '');
+
+  if (accion === 'proforma') {
+    if (!tratoId) {
+      ejecutarGuardado('trato_y_pedido', aid, function(savedTratoId) {
+        if (savedTratoId) generarProforma(savedTratoId);
+      });
+    } else {
+      ejecutarGuardado('actualizar', aid, function() { generarProforma(tratoId); });
+    }
+    return;
+  }
+
+  if (accion === 'enviar_perseo') {
+    if (!tratoId) { showToast('Primero guarda el pedido antes de enviarlo a Perseo.', 'error'); return; }
+    mostrarOverlay('Enviando a Perseo...');
+    deshabilitarBotones(true);
+    api('enviar_perseo', { tratoId: tratoId })
+      .then(function(pr) {
+        ocultarOverlay(); deshabilitarBotones(false);
+        if (pr && pr.ok) { showToast('Pedido enviado a Perseo correctamente', 'ok'); }
+        else { showToast('Error: ' + (pr ? pr.error : 'desconocido'), 'error'); }
+      })
+      .catch(function(e) { ocultarOverlay(); deshabilitarBotones(false); showToast('Error: ' + e, 'error'); });
+    return;
+  }
+
+  ejecutarGuardado(accion, aid, null);
+}
+
+function ejecutarGuardado(accion, aid, callback) {
+  var nombre = document.getElementById('tratoNombre').value.trim();
+  var payload = {
+    action:            'crear_pedido_widget',
+    accountId:         aid,
+    tratoNombre:       nombre,
+    fechaCierre:       document.getElementById('fechaCierre').value.trim(),
+    numeroOrdenCompra: document.getElementById('ordenCompra').value.trim(),
+    tratoTipo:         document.getElementById('tratoTipo').value,
+    tratoFase:         document.getElementById('tratoFase').value,
+    tratoClasificacion:document.getElementById('tratoClasificacion').value,
+    accion:            accion,
+    lineas: (accion !== 'solo_trato') ? lineas.map(function(l) {
+      return { producto: l.codigo + ' - ' + l.nombre, productoZohoId: l.productoId, cantidad: l.cantidad, precio: l.precioUnit, descuento: l.descuento, precioFinal: l.precioFinal, iva: String(l.iva), existencia: l.stock };
+    }) : []
+  };
+  if (tratoId) payload.tratoId = tratoId;
+
+  var msgs = { solo_trato: 'Creando trato...', trato_y_pedido: 'Guardando pedido...', actualizar: 'Actualizando pedido...' };
+  mostrarOverlay(msgs[accion] || 'Procesando...');
+  deshabilitarBotones(true);
+
+  apiPost('crear_pedido_widget', payload)
+    .then(function(data) {
+      ocultarOverlay(); deshabilitarBotones(false);
+      if (data && data.ok) {
+        if (data.tratoId) tratoId = data.tratoId;
+        var mensajes = { solo_trato: 'Trato creado', trato_y_pedido: 'Pedido guardado - ' + (data.detallesCreados || 0) + ' producto(s)', actualizar: 'Pedido actualizado' };
+        showToast(mensajes[accion] || 'Listo', 'ok');
+        if (modo !== 'editar') { modo = 'editar'; renderModoBadge(); renderAcciones(); }
+        if (callback) callback(data.tratoId || tratoId);
+      } else {
+        showToast('Error: ' + (data.error || 'respuesta inesperada'), 'error');
+      }
+    })
+    .catch(function(e) { ocultarOverlay(); deshabilitarBotones(false); showToast('Error: ' + e, 'error'); });
+}
+
+function generarProforma(tid) {
+  mostrarOverlay('Generando proforma...');
+  deshabilitarBotones(true);
+  api('generar_proforma', { tratoId: tid })
+    .then(function(pr) {
+      ocultarOverlay(); deshabilitarBotones(false);
+      if (pr && pr.ok && pr.downloadUrl) {
+        mostrarBtnDescarga(pr.downloadUrl, pr.archivoPdfNombre || 'proforma.pdf');
+        showToast('Proforma ' + pr.numeroProforma + ' generada', 'ok');
+      } else {
+        showToast('Error al generar proforma: ' + (pr ? pr.error : 'desconocido'), 'error');
+      }
+    })
+    .catch(function(e) { ocultarOverlay(); deshabilitarBotones(false); showToast('Error: ' + e, 'error'); });
+}
+
+function mostrarBtnDescarga(url, nombre) {
+  limpiarBtnDescarga();
+  var bar = document.getElementById('accionesBar');
+  var btn = document.createElement('a');
+  btn.id = 'btnDescargaProforma';
+  btn.href = url;
+  btn.target = '_blank';
+  btn.className = 'btn btn-success';
+  btn.textContent = 'Descargar proforma';
+  btn.style.textDecoration = 'none';
+  bar.insertBefore(btn, bar.firstChild);
+}
+
+function limpiarBtnDescarga() {
+  var ex = document.getElementById('btnDescargaProforma');
+  if (ex) ex.remove();
+}
+
+function deshabilitarBotones(v) {
+  ['btnGuardar','btnProforma','btnPerseo'].forEach(function(id) { var b = document.getElementById(id); if (b) b.disabled = v; });
+}
+
+// =====================================================================
+// REGISTRAR CLIENTE EN PERSEO
+// =====================================================================
+function registrarEnPerseo() {
+  var aid = cuentaId || String(cuenta.id || '');
+  if (!aid) { showToast('No hay cuenta seleccionada', 'error'); return; }
+  if (!cuenta.identificacion) {
+    showToast('La cuenta no tiene Identificación. Agrégala primero en Zoho.', 'error');
+    return;
+  }
+  mostrarOverlay('Registrando cliente en Perseo...');
+  api('crear_cliente_perseo', { accountId: aid })
+    .then(function(r) {
+      ocultarOverlay();
+      if (r && r.ok) {
+        cuenta.ID_Cliente_Perseo = r.clientesidNuevo;
+        cuenta.perseoId = r.clientesidNuevo;
+        var badge  = document.getElementById('clienteBadge');
+        var btnReg = document.getElementById('btnRegistrarPerseo');
+        badge.textContent = 'Perseo OK';
+        badge.className = 'badge badge-ok';
+        btnReg.style.display = 'none';
+        var metaActualizada = [];
+        if (cuenta.Phone || cuenta.telefono) metaActualizada.push(cuenta.Phone || cuenta.telefono);
+        metaActualizada.push('Perseo: ' + r.clientesidNuevo);
+        document.getElementById('clienteMeta').textContent = metaActualizada.join('  -  ');
+        showToast('Cliente registrado en Perseo (ID: ' + r.clientesidNuevo + ')', 'ok');
+      } else {
+        showToast('Error: ' + (r ? r.error : 'desconocido'), 'error');
+      }
+    })
+    .catch(function(e) { ocultarOverlay(); showToast('Error: ' + e, 'error'); });
+}
+
+// =====================================================================
+// UTILIDADES
+// =====================================================================
+function resetFormulario() { lineas = []; document.getElementById('tratoNombre').value = ''; document.getElementById('ordenCompra').value = ''; document.getElementById('tratoTipo').value = ''; document.getElementById('tratoClasificacion').value = ''; setFechaDefault(); limpiarBtnDescarga(); renderTabla(); }
+function setFechaDefault() { var d = new Date(Date.now() + 30*24*60*60*1000); document.getElementById('fechaCierre').value = d.toISOString().slice(0,10); }
+function showToast(msg, tipo) { var t = document.getElementById('toast'); t.className = 'toast ' + tipo; t.textContent = msg; setTimeout(function() { t.className = 'toast'; }, 5000); }
+function mostrarOverlay(msg) { document.getElementById('overlayMsg').textContent = msg || 'Procesando...'; document.getElementById('overlay').classList.add('active'); }
+function ocultarOverlay() { document.getElementById('overlay').classList.remove('active'); }
+function r2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+function escH(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function capitalizar(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+</script>
+</body>
+</html>
