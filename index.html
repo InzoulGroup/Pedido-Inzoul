@@ -265,9 +265,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// URL base del script - sin /u/X/ para funcionar con cualquier cuenta
 var API_URL = 'https://corsproxy.io/?' + encodeURIComponent('https://script.google.com/macros/s/AKfycbz217zRenxCu3U56MM_-kwXDu3XHd4_1MPH7nDXhVohm9TUCiaTDWUlsL6mIDvLR-MtLw/exec');
-var INITIAL_ACCOUNT_ID = '<?= initialAccountId ?>';
+var INITIAL_ACCOUNT_ID = '';
 
 var cuenta       = {};
 var cuentaId     = '';
@@ -281,7 +280,7 @@ var timeoutBusq  = null;
 var timeoutCuenta= null;
 
 // =====================================================================
-// API - reemplaza google.script.run con fetch
+// API
 // =====================================================================
 function api(action, params) {
   var url = API_URL + '?action=' + encodeURIComponent(action);
@@ -292,11 +291,20 @@ function api(action, params) {
 }
 
 function apiPost(action, body) {
-  return fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.assign({ action: action }, body || {}))
-  }).then(function(r) { return r.json(); });
+  // Usar GET con lineas como JSON string para evitar problemas CORS con POST
+  var params = Object.assign({ action: action }, body || {});
+  if (params.lineas && Array.isArray(params.lineas)) {
+    params.lineas = JSON.stringify(params.lineas);
+  }
+  var url = API_URL;
+  var first = true;
+  Object.keys(params).forEach(function(k) {
+    var val = params[k];
+    if (val === null || val === undefined) return;
+    url += (first ? '?' : '&') + encodeURIComponent(k) + '=' + encodeURIComponent(typeof val === 'object' ? JSON.stringify(val) : val);
+    first = false;
+  });
+  return fetch(url).then(function(r) { return r.json(); });
 }
 
 // =====================================================================
@@ -307,9 +315,13 @@ window.addEventListener('load', function() {
   renderTabla();
   setupBuscarCuenta();
 
-  if (INITIAL_ACCOUNT_ID) {
+  // Leer accountId de la URL si viene desde Zoho
+  var urlParams = new URLSearchParams(window.location.search);
+  var aid = urlParams.get('accountId') || urlParams.get('account_id') || INITIAL_ACCOUNT_ID;
+
+  if (aid) {
     mostrarOverlay('Cargando datos del cliente...');
-    api('get_cuenta', { accountId: INITIAL_ACCOUNT_ID })
+    api('get_cuenta', { accountId: aid })
       .then(function(r) {
         if (!r || !r.ok) { ocultarOverlay(); return; }
         cuenta = r.cuenta;
