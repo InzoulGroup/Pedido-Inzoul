@@ -345,7 +345,7 @@ function setupBuscarCuenta() {
     var q = this.value.trim();
     if (q.length < 2) { ocultarCuentaSug(); return; }
     var qc = q;
-    timeoutCuenta = setTimeout(function() { buscarCuentas(qc); }, 350);
+    timeoutCuenta = setTimeout(function() { buscarCuentas(qc); }, 150);
   });
   input.addEventListener('blur', function() { setTimeout(ocultarCuentaSug, 200); });
 }
