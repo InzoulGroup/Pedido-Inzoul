@@ -285,15 +285,25 @@ function apiPost(action, body) {
   if (params.lineas && Array.isArray(params.lineas)) {
     params.lineas = JSON.stringify(params.lineas);
   }
-  var url = SCRIPT_URL;
-  var first = true;
+  var formData = new FormData();
   Object.keys(params).forEach(function(k) {
     var val = params[k];
     if (val === null || val === undefined) return;
-    url += (first ? '?' : '&') + encodeURIComponent(k) + '=' + encodeURIComponent(typeof val === 'object' ? JSON.stringify(val) : val);
-    first = false;
+    formData.append(k, typeof val === 'object' ? JSON.stringify(val) : val);
   });
-  return fetch(url, { redirect: 'follow' }).then(function(r) { return r.json(); });
+  return fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: formData,
+    redirect: 'follow'
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  })
+  .then(function(txt) {
+    try { return JSON.parse(txt); }
+    catch(e) { throw new Error('Respuesta inválida del servidor'); }
+  });
 }
 
 window.addEventListener('load', function() {
