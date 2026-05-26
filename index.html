@@ -423,7 +423,7 @@ function modalTratosAbrir() {
   if (!tratoSeleccionado) { showToast('Selecciona un trato de la lista', 'warn'); return; }
   document.getElementById('modalTratos').classList.add('hidden');
   mostrarOverlay('Cargando pedido existente...');
-  api('get_trato', { dealId: tratoSeleccionado.id })
+api('get_trato', { tratoId: tratoSeleccionado.id })
     .then(function(r) {
       ocultarOverlay();
       if (!r || !r.ok) { showToast('Error al cargar el trato', 'error'); return; }
