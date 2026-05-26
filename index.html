@@ -654,7 +654,7 @@ function agregarProducto(id) {
   var p = null;
   for (var i = 0; i < catalogo.length; i++) { if (catalogo[i].id === id) { p = catalogo[i]; break; } }
   if (!p) return;
-  for (var j = 0; j < lineas.length; j++) { if (lineas[j].productoId === id) { lineas[j].cantidad++; recalc(lineas[j]); renderTabla(); return; } }
+  for (var j = 0; j < lineas.length; j++) { if (lineas[j].productoId === id || (lineas[j].codigo && lineas[j].codigo === p.codigo)) { lineas[j].cantidad++; recalc(lineas[j]); renderTabla(); return; } }
   var iva = parseInt(p.iva) || 0;
   lineas.push({ productoId: p.id, nombre: p.nombre, codigo: p.codigo, stock: p.stock, precioUnit: p.precio, descuento: 0, precioFinal: p.precio, cantidad: 1, iva: iva, total: p.precio });
   renderTabla();
