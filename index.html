@@ -285,15 +285,16 @@ function apiPost(action, body) {
   if (params.lineas && Array.isArray(params.lineas)) {
     params.lineas = JSON.stringify(params.lineas);
   }
-  var formData = new FormData();
-  Object.keys(params).forEach(function(k) {
-    var val = params[k];
-    if (val === null || val === undefined) return;
-    formData.append(k, typeof val === 'object' ? JSON.stringify(val) : val);
-  });
+  var encoded = Object.keys(params).filter(function(k) {
+    return params[k] !== null && params[k] !== undefined;
+  }).map(function(k) {
+    var val = typeof params[k] === 'object' ? JSON.stringify(params[k]) : params[k];
+    return encodeURIComponent(k) + '=' + encodeURIComponent(val);
+  }).join('&');
   return fetch(SCRIPT_URL, {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: encoded,
     redirect: 'follow'
   })
   .then(function(r) {
@@ -433,7 +434,7 @@ function modalTratosAbrir() {
   if (!tratoSeleccionado) { showToast('Selecciona un trato de la lista', 'warn'); return; }
   document.getElementById('modalTratos').classList.add('hidden');
   mostrarOverlay('Cargando pedido existente...');
-api('get_trato', { tratoId: tratoSeleccionado.id })
+  api('get_trato', { tratoId: tratoSeleccionado.id })
     .then(function(r) {
       ocultarOverlay();
       if (!r || !r.ok) { showToast('Error al cargar el trato', 'error'); return; }
