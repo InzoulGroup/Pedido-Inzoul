@@ -269,7 +269,15 @@ function api(action, params) {
   Object.keys(params || {}).forEach(function(k) {
     url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k] || '');
   });
-  return fetch(url, { redirect: 'follow' }).then(function(r) { return r.json(); });
+  return fetch(url, { redirect: 'follow' })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(function(txt) {
+      try { return JSON.parse(txt); }
+      catch(e) { throw new Error('Respuesta inválida del servidor'); }
+    });
 }
 
 function apiPost(action, body) {
@@ -426,7 +434,7 @@ function modalTratosAbrir() {
         document.getElementById('fechaCierre').value        = r.trato.fechaCierre || '';
         document.getElementById('ordenCompra').value        = r.trato.ordenCompra || '';
         document.getElementById('tratoTipo').value          = r.trato.tipo || '';
-        document.getElementById('tratoFase').value          = r.trato.fase || 'Cotizacion de propuesta/precio';
+        document.getElementById('tratoFase').value          = r.trato.fase || 'Cotización de propuesta/precio';
         document.getElementById('tratoClasificacion').value = r.trato.clasificacion || '';
       }
       lineas = (r.lineas || []).map(function(l) {
@@ -490,7 +498,7 @@ function iniciarFormularioNuevo(cuentaData, nombreSugerido) {
   document.getElementById('ordenCompra').value = '';
   document.getElementById('tratoTipo').value = '';
   document.getElementById('tratoClasificacion').value = '';
-  document.getElementById('tratoFase').value = 'Cotizacion de propuesta/precio';
+  document.getElementById('tratoFase').value = 'Cotización de propuesta/precio';
   setFechaDefault();
   mostrarPantallaFormulario();
   renderCliente();
