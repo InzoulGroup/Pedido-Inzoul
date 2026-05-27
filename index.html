@@ -409,6 +409,13 @@ window.addEventListener('load', function() {
   var urlParams = new URLSearchParams(window.location.search);
   var aid = urlParams.get('accountId') || urlParams.get('account_id') || '';
 
+  // Si no viene por parámetro, leerlo del referrer (URL de Zoho al hacer clic en "Crear Pedido")
+  if (!aid) {
+    var ref = document.referrer || '';
+    var matchRef = ref.match(/\/tab\/Accounts\/(\d+)/);
+    if (matchRef) aid = matchRef[1];
+  }
+
   if (aid) {
     mostrarOverlay('Cargando datos del cliente...');
     api('get_cuenta', { accountId: aid })
