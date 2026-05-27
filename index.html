@@ -81,6 +81,9 @@
   .btn-warn:disabled{background:#fcd34d;cursor:not-allowed;}
   .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);}
   .btn-ghost:hover{background:var(--bg);}
+  .btn-adjuntar{background:transparent;color:#7c3aed;border:1px solid #c4b5fd;font-size:12.5px;}
+  .btn-adjuntar:hover{background:#f5f3ff;}
+  .btn-adjuntar:disabled{opacity:.5;cursor:not-allowed;}
   .btn-danger-sm{padding:3px 8px;border-radius:5px;font-size:11px;background:transparent;color:var(--danger);border:1px solid #fca5a5;cursor:pointer;font-family:inherit;}
   .btn-danger-sm:hover{background:#fef2f2;}
   .table-wrap{overflow-x:auto;}
@@ -106,7 +109,9 @@
   .total-value.grand{font-size:20px;color:var(--accent);}
   .empty-state{text-align:center;padding:32px 16px;color:var(--muted);}
   .empty-icon{font-size:30px;margin-bottom:8px;}
-  .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;}
+  .adjunto-chip{display:inline-flex;align-items:center;gap:6px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:20px;padding:4px 10px;font-size:11.5px;color:#7c3aed;font-weight:500;}
+  .adjunto-chip button{background:none;border:none;cursor:pointer;color:#7c3aed;font-size:13px;line-height:1;padding:0 2px;}
   .toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:999;display:none;}
   .toast.ok{background:var(--ok);color:#fff;display:block;}
   .toast.error{background:var(--danger);color:#fff;display:block;}
@@ -118,6 +123,8 @@
   .big-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .hidden{display:none!important;}
+  /* input file oculto */
+  #inputArchivoOC{display:none;}
 </style>
 </head>
 <body>
@@ -233,6 +240,9 @@
   </div>
 </div>
 
+<!-- Input file oculto para O/C -->
+<input type="file" id="inputArchivoOC" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"/>
+
 <div class="modal-overlay hidden" id="modalTratos">
   <div class="modal-box">
     <h3>Pedidos de este mes</h3>
@@ -253,16 +263,19 @@
 <script>
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz217zRenxCu3U56MM_-kwXDu3XHd4_1MPH7nDXhVohm9TUCiaTDWUlsL6mIDvLR-MtLw/exec';
 
-var cuenta       = {};
-var cuentaId     = '';
-var lineas       = [];
-var catalogo     = [];
-var tratoId      = null;
-var modo         = 'crear_con_pedido';
-var tratosDelMes = [];
+var cuenta            = {};
+var cuentaId          = '';
+var lineas            = [];
+var catalogo          = [];
+var tratoId           = null;
+var modo              = 'crear_con_pedido';
+var tratosDelMes      = [];
 var tratoSeleccionado = null;
-var timeoutBusq  = null;
-var timeoutCuenta= null;
+var timeoutBusq       = null;
+var timeoutCuenta     = null;
+
+// Archivo O/C pendiente de subir
+var archivoPendiente  = null; // { nombre, base64, tipo }
 
 function api(action, params) {
   var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
@@ -307,6 +320,87 @@ function apiPost(action, body) {
   });
 }
 
+// ── ADJUNTAR ORDEN DE COMPRA ─────────────────────────────────
+document.getElementById('inputArchivoOC').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+
+  // Validar tamaño máximo 5MB
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('El archivo supera los 5MB permitidos.', 'error');
+    this.value = '';
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    // Extraer solo el base64 sin el prefijo "data:...;base64,"
+    var base64 = ev.target.result.split(',')[1];
+    archivoPendiente = { nombre: file.name, base64: base64, tipo: file.type };
+    renderChipAdjunto(file.name);
+    // Si ya hay un trato guardado, subir inmediatamente
+    if (tratoId) {
+      subirAdjuntoOC(tratoId);
+    } else {
+      showToast('Archivo listo — se adjuntará al guardar el trato.', 'warn');
+    }
+  };
+  reader.readAsDataURL(file);
+  // Limpiar el input para permitir subir el mismo archivo de nuevo
+  this.value = '';
+});
+
+function abrirSelectorArchivo() {
+  document.getElementById('inputArchivoOC').click();
+}
+
+function renderChipAdjunto(nombre) {
+  var ex = document.getElementById('chipAdjunto');
+  if (ex) ex.remove();
+  var bar = document.getElementById('accionesBar');
+  var chip = document.createElement('span');
+  chip.id = 'chipAdjunto';
+  chip.className = 'adjunto-chip';
+  chip.innerHTML = '📎 ' + escH(nombre) + ' <button onclick="quitarAdjunto()" title="Quitar">×</button>';
+  bar.insertBefore(chip, bar.firstChild);
+}
+
+function quitarAdjunto() {
+  archivoPendiente = null;
+  var chip = document.getElementById('chipAdjunto');
+  if (chip) chip.remove();
+}
+
+function subirAdjuntoOC(tid) {
+  if (!archivoPendiente || !tid) return;
+  mostrarOverlay('Subiendo orden de compra...');
+  deshabilitarBotones(true);
+  apiPost('subir_adjunto', {
+    tratoId:       tid,
+    fileName:      archivoPendiente.nombre,
+    fileType:      archivoPendiente.tipo,
+    fileBase64:    archivoPendiente.base64
+  })
+  .then(function(r) {
+    ocultarOverlay(); deshabilitarBotones(false);
+    if (r && r.ok) {
+      showToast('Orden de compra adjuntada correctamente.', 'ok');
+      archivoPendiente = null;
+      var chip = document.getElementById('chipAdjunto');
+      if (chip) {
+        chip.innerHTML = '✅ ' + escH(r.fileName || 'O/C adjuntada');
+        chip.style.background = '#f0fdf4';
+        chip.style.borderColor = '#86efac';
+        chip.style.color = '#16a34a';
+      }
+    } else {
+      showToast('Error al adjuntar: ' + (r ? r.error : 'desconocido'), 'error');
+    }
+  })
+  .catch(function(e) { ocultarOverlay(); deshabilitarBotones(false); showToast('Error: ' + e, 'error'); });
+}
+
+// ── SETUP ────────────────────────────────────────────────────
 window.addEventListener('load', function() {
   setFechaDefault();
   renderTabla();
@@ -401,7 +495,7 @@ function seleccionarCuenta(id, nombre) {
 
 function volverBusqueda() {
   cuenta = {}; cuentaId = ''; lineas = []; tratoId = null; modo = 'crear_con_pedido';
-  tratosDelMes = []; tratoSeleccionado = null;
+  tratosDelMes = []; tratoSeleccionado = null; archivoPendiente = null;
   document.getElementById('screenPedido').classList.add('hidden');
   document.getElementById('screenBuscar').classList.remove('hidden');
   document.getElementById('inputBuscarCuenta').value = '';
@@ -503,6 +597,7 @@ function iniciarFormularioNuevo(cuentaData, nombreSugerido) {
   tratoId = null;
   modo = 'crear_con_pedido';
   lineas = [];
+  archivoPendiente = null;
   cuenta = cuentaData || cuenta;
   var nombre = nombreSugerido || generarNombreBase(cuenta);
   document.getElementById('tratoNombre').value = nombre;
@@ -604,22 +699,35 @@ function renderModoBadge() {
 function renderAcciones() {
   var bar = document.getElementById('accionesBar');
   var sec = document.getElementById('seccionProductos');
+
+  // Botón adjuntar O/C — siempre disponible en todos los modos
+  var btnAdjuntar = '<button class="btn btn-adjuntar" id="btnAdjuntarOC" onclick="abrirSelectorArchivo()">📎 Adjuntar O/C</button>';
+
   if (modo === 'crear_sin_pedido') {
     sec.classList.add('hidden');
-    bar.innerHTML = '<button class="btn btn-ghost" onclick="cambiarModo(\'crear_con_pedido\')">+ Agregar productos</button>' +
+    bar.innerHTML =
+      btnAdjuntar +
+      '<button class="btn btn-ghost" onclick="cambiarModo(\'crear_con_pedido\')">+ Agregar productos</button>' +
       '<button class="btn btn-primary" id="btnGuardar" onclick="guardar(\'solo_trato\')">Crear trato</button>';
   } else if (modo === 'crear_con_pedido') {
     sec.classList.remove('hidden');
-    bar.innerHTML = '<button class="btn btn-ghost" onclick="cambiarModo(\'crear_sin_pedido\')">Solo crear trato</button>' +
+    bar.innerHTML =
+      btnAdjuntar +
+      '<button class="btn btn-ghost" onclick="cambiarModo(\'crear_sin_pedido\')">Solo crear trato</button>' +
       '<button class="btn btn-primary" id="btnGuardar" onclick="guardar(\'trato_y_pedido\')">Guardar pedido</button>';
   } else {
+    // modo editar
     sec.classList.remove('hidden');
     bar.innerHTML =
+      btnAdjuntar +
       '<button class="btn btn-ghost" onclick="resetFormulario()">Descartar cambios</button>' +
       '<button class="btn btn-primary" id="btnGuardar" onclick="guardar(\'actualizar\')">Guardar cambios</button>' +
       '<button class="btn btn-success" id="btnProforma" onclick="guardar(\'proforma\')">Generar proforma</button>' +
       '<button class="btn btn-warn" id="btnPerseo" onclick="guardar(\'enviar_perseo\')">Enviar a Perseo</button>';
   }
+
+  // Re-renderizar el chip si había un archivo pendiente
+  if (archivoPendiente) renderChipAdjunto(archivoPendiente.nombre);
 }
 
 function cambiarModo(m) { modo = m; renderModoBadge(); renderAcciones(); renderTabla(); }
@@ -704,8 +812,8 @@ function actualizarTotales() {
 function guardar(accion) {
   var nombre = document.getElementById('tratoNombre').value.trim();
   if (!nombre) { showToast('Escribe el nombre del trato.', 'error'); return; }
-  if (accion !== 'solo_trato' && !lineas.length) { showToast('Agrega al menos un producto.', 'error'); return; }
   var aid = cuentaId || String(cuenta.id || '');
+
   if (accion === 'proforma') {
     if (!tratoId) {
       ejecutarGuardado('trato_y_pedido', aid, function(savedTratoId) {
@@ -757,9 +865,13 @@ function ejecutarGuardado(accion, aid, callback) {
       ocultarOverlay(); deshabilitarBotones(false);
       if (data && data.ok) {
         if (data.tratoId) tratoId = data.tratoId;
-        var mensajes = { solo_trato: 'Trato creado', trato_y_pedido: 'Pedido guardado - ' + (data.detallesCreados || 0) + ' producto(s)', actualizar: 'Pedido actualizado' };
+        var mensajes = { solo_trato: 'Trato creado', trato_y_pedido: 'Pedido guardado — ' + (data.detallesCreados || 0) + ' producto(s)', actualizar: 'Pedido actualizado' };
         showToast(mensajes[accion] || 'Listo', 'ok');
         if (modo !== 'editar') { modo = 'editar'; renderModoBadge(); renderAcciones(); }
+        // Si había archivo pendiente, subirlo ahora que ya existe el trato
+        if (archivoPendiente && tratoId) {
+          subirAdjuntoOC(tratoId);
+        }
         if (callback) callback(data.tratoId || tratoId);
       } else {
         showToast('Error: ' + (data.error || 'respuesta inesperada'), 'error');
@@ -803,7 +915,10 @@ function limpiarBtnDescarga() {
 }
 
 function deshabilitarBotones(v) {
-  ['btnGuardar','btnProforma','btnPerseo'].forEach(function(id) { var b = document.getElementById(id); if (b) b.disabled = v; });
+  ['btnGuardar','btnProforma','btnPerseo','btnAdjuntarOC'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b) b.disabled = v;
+  });
 }
 
 function registrarEnPerseo() {
@@ -837,7 +952,14 @@ function registrarEnPerseo() {
     .catch(function(e) { ocultarOverlay(); showToast('Error: ' + e, 'error'); });
 }
 
-function resetFormulario() { lineas = []; document.getElementById('tratoNombre').value = ''; document.getElementById('ordenCompra').value = ''; document.getElementById('tratoTipo').value = ''; document.getElementById('tratoClasificacion').value = ''; setFechaDefault(); limpiarBtnDescarga(); renderTabla(); }
+function resetFormulario() {
+  lineas = []; archivoPendiente = null;
+  document.getElementById('tratoNombre').value = '';
+  document.getElementById('ordenCompra').value = '';
+  document.getElementById('tratoTipo').value = '';
+  document.getElementById('tratoClasificacion').value = '';
+  setFechaDefault(); limpiarBtnDescarga(); renderTabla();
+}
 function setFechaDefault() { var d = new Date(Date.now() + 30*24*60*60*1000); document.getElementById('fechaCierre').value = d.toISOString().slice(0,10); }
 function showToast(msg, tipo) { var t = document.getElementById('toast'); t.className = 'toast ' + tipo; t.textContent = msg; setTimeout(function() { t.className = 'toast'; }, 5000); }
 function mostrarOverlay(msg) { document.getElementById('overlayMsg').textContent = msg || 'Procesando...'; document.getElementById('overlay').classList.add('active'); }
