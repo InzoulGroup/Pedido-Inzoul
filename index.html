@@ -295,13 +295,29 @@ function api(action, params) {
     });
 }
 
-// Envía JSON puro en el body para evitar truncamiento de payload largo
+// Envía el payload como form-encoded. Las lineas van en la URL para evitar
+// truncamiento del body cuando hay muchos productos.
 function apiPost(action, body) {
-  var payload = Object.assign({ action: action }, body || {});
-  return fetch(SCRIPT_URL, {
+  var params = Object.assign({ action: action }, body || {});
+  var lineas = params.lineas;
+  delete params.lineas;
+
+  // Construir URL con action + lineas como query params
+  var lineasJson = lineas ? (Array.isArray(lineas) ? JSON.stringify(lineas) : lineas) : '[]';
+  var url = SCRIPT_URL + '?action=' + encodeURIComponent(action) + '&lineas=' + encodeURIComponent(lineasJson);
+
+  // El resto del payload va en el body
+  var encoded = Object.keys(params).filter(function(k) {
+    return params[k] !== null && params[k] !== undefined;
+  }).map(function(k) {
+    var val = typeof params[k] === 'object' ? JSON.stringify(params[k]) : params[k];
+    return encodeURIComponent(k) + '=' + encodeURIComponent(val);
+  }).join('&');
+
+  return fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: encoded,
     redirect: 'follow'
   })
   .then(function(r) {
