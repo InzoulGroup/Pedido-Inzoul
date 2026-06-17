@@ -730,7 +730,7 @@ document.getElementById('busquedaProducto').addEventListener('blur', function() 
 
 function mostrarSug(q) {
   var t = q.toLowerCase();
-  var m = catalogo.filter(function(p) { return p.nombre.toLowerCase().indexOf(t) > -1 || p.codigo.toLowerCase().indexOf(t) > -1; }).slice(0, 12);
+  var m = catalogo.filter(function(p) { return p.nombre.toLowerCase().indexOf(t) > -1 || p.codigo.toLowerCase().indexOf(t) > -1; }).slice(0, 50);
   var box = document.getElementById('suggestions');
   if (!m.length) { ocultarSug(); return; }
   box.innerHTML = m.map(function(p) {
