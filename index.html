@@ -882,7 +882,7 @@ function ejecutarGuardado(accion, aid, callback) {
     tratoClasificacion:document.getElementById('tratoClasificacion').value,
     accion:            accion,
     lineas: (accion !== 'solo_trato') ? lineas.map(function(l) {
-      return { producto: l.codigo + ' - ' + l.nombre, productoZohoId: l.productoId, cantidad: l.cantidad, precio: l.precioUnit, descuento: l.descuento, precioFinal: l.precioFinal, iva: String(l.iva), existencia: l.stock };
+      return { p: l.codigo + ' - ' + l.nombre, c: l.cantidad, pr: l.precioUnit, d: l.descuento, pf: l.precioFinal, i: String(l.iva), e: l.stock };
     }) : []
   };
   if (tratoId) payload.tratoId = tratoId;
