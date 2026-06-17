@@ -296,20 +296,10 @@ function api(action, params) {
 }
 
 function apiPost(action, body) {
-  var params = Object.assign({ action: action }, body || {});
-  if (params.lineas && Array.isArray(params.lineas)) {
-    params.lineas = JSON.stringify(params.lineas);
-  }
-  var encoded = Object.keys(params).filter(function(k) {
-    return params[k] !== null && params[k] !== undefined;
-  }).map(function(k) {
-    var val = typeof params[k] === 'object' ? JSON.stringify(params[k]) : params[k];
-    return encodeURIComponent(k) + '=' + encodeURIComponent(val);
-  }).join('&');
+  var payload = Object.assign({ action: action }, body || {});
   return fetch(SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: encoded,
+    body: JSON.stringify(payload),
     redirect: 'follow'
   })
   .then(function(r) {
@@ -889,7 +879,7 @@ function ejecutarGuardado(accion, aid, callback) {
 
         if (data.erroresLineas && data.erroresLineas.length > 0) {
           mostrarAlertaProductos(data.erroresLineas);
-          showToast('⚠️ ' + data.erroresLineas.length + ' producto(s) no se guardaron. Revisa abajo.', 'warn');
+          showToast('⚠️ Error: ' + (data.erroresDetalle || 'desconocido'), 'warn');
         } else {
           limpiarAlertaProductos();
           var total = data.detallesTotal || data.detallesCreados || 0;
