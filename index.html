@@ -124,7 +124,6 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   .hidden{display:none!important;}
   #inputArchivoOC{display:none;}
-  /* Alerta de productos faltantes */
   .alerta-productos{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px 14px;margin-top:10px;font-size:12.5px;color:#991b1b;}
   .alerta-productos strong{display:block;margin-bottom:6px;}
   .alerta-productos ul{margin:0 0 0 16px;}
@@ -296,21 +295,13 @@ function api(action, params) {
     });
 }
 
+// Envía JSON puro en el body para evitar truncamiento de payload largo
 function apiPost(action, body) {
-  var params = Object.assign({ action: action }, body || {});
-  if (params.lineas && Array.isArray(params.lineas)) {
-    params.lineas = JSON.stringify(params.lineas);
-  }
-  var encoded = Object.keys(params).filter(function(k) {
-    return params[k] !== null && params[k] !== undefined;
-  }).map(function(k) {
-    var val = typeof params[k] === 'object' ? JSON.stringify(params[k]) : params[k];
-    return encodeURIComponent(k) + '=' + encodeURIComponent(val);
-  }).join('&');
+  var payload = Object.assign({ action: action }, body || {});
   return fetch(SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: encoded,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
     redirect: 'follow'
   })
   .then(function(r) {
@@ -888,7 +879,6 @@ function ejecutarGuardado(accion, aid, callback) {
       if (data && (data.ok || data.tratoId)) {
         if (data.tratoId) tratoId = data.tratoId;
 
-        // Verificar si hubo productos que no se guardaron
         if (data.erroresLineas && data.erroresLineas.length > 0) {
           mostrarAlertaProductos(data.erroresLineas);
           showToast('⚠️ ' + data.erroresLineas.length + ' producto(s) no se guardaron. Revisa abajo.', 'warn');
