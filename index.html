@@ -112,7 +112,7 @@
   .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;}
   .adjunto-chip{display:inline-flex;align-items:center;gap:6px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:20px;padding:4px 10px;font-size:11.5px;color:#7c3aed;font-weight:500;}
   .adjunto-chip button{background:none;border:none;cursor:pointer;color:#7c3aed;font-size:13px;line-height:1;padding:0 2px;}
-  .toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:999;display:none;}
+  .toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:999;display:none;max-width:360px;}
   .toast.ok{background:var(--ok);color:#fff;display:block;}
   .toast.error{background:var(--danger);color:#fff;display:block;}
   .toast.warn{background:var(--warn);color:#fff;display:block;}
@@ -123,8 +123,12 @@
   .big-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .hidden{display:none!important;}
-  /* input file oculto */
   #inputArchivoOC{display:none;}
+  /* Alerta de productos faltantes */
+  .alerta-productos{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px 14px;margin-top:10px;font-size:12.5px;color:#991b1b;}
+  .alerta-productos strong{display:block;margin-bottom:6px;}
+  .alerta-productos ul{margin:0 0 0 16px;}
+  .alerta-productos li{margin-bottom:3px;}
 </style>
 </head>
 <body>
@@ -237,11 +241,11 @@
         <div class="total-item"><div class="total-label">Total</div><div class="total-value grand" id="tTotal">$0.00</div></div>
       </div>
     </div>
+    <div id="alertaProductos"></div>
     <div class="actions" id="accionesBar"></div>
   </div>
 </div>
 
-<!-- Input file oculto para O/C -->
 <input type="file" id="inputArchivoOC" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"/>
 
 <div class="modal-overlay hidden" id="modalTratos">
@@ -274,9 +278,7 @@ var tratosDelMes      = [];
 var tratoSeleccionado = null;
 var timeoutBusq       = null;
 var timeoutCuenta     = null;
-
-// Archivo O/C pendiente de subir
-var archivoPendiente  = null; // { nombre, base64, tipo }
+var archivoPendiente  = null;
 
 function api(action, params) {
   var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
@@ -321,25 +323,19 @@ function apiPost(action, body) {
   });
 }
 
-// ── ADJUNTAR ORDEN DE COMPRA ─────────────────────────────────
 document.getElementById('inputArchivoOC').addEventListener('change', function(e) {
   var file = e.target.files[0];
   if (!file) return;
-
-  // Validar tamaño máximo 5MB
   if (file.size > 5 * 1024 * 1024) {
     showToast('El archivo supera los 5MB permitidos.', 'error');
     this.value = '';
     return;
   }
-
   var reader = new FileReader();
   reader.onload = function(ev) {
-    // Extraer solo el base64 sin el prefijo "data:...;base64,"
     var base64 = ev.target.result.split(',')[1];
     archivoPendiente = { nombre: file.name, base64: base64, tipo: file.type };
     renderChipAdjunto(file.name);
-    // Si ya hay un trato guardado, subir inmediatamente
     if (tratoId) {
       subirAdjuntoOC(tratoId);
     } else {
@@ -347,7 +343,6 @@ document.getElementById('inputArchivoOC').addEventListener('change', function(e)
     }
   };
   reader.readAsDataURL(file);
-  // Limpiar el input para permitir subir el mismo archivo de nuevo
   this.value = '';
 });
 
@@ -377,10 +372,10 @@ function subirAdjuntoOC(tid) {
   mostrarOverlay('Subiendo orden de compra...');
   deshabilitarBotones(true);
   apiPost('subir_adjunto', {
-    tratoId:       tid,
-    fileName:      archivoPendiente.nombre,
-    fileType:      archivoPendiente.tipo,
-    fileBase64:    archivoPendiente.base64
+    tratoId:    tid,
+    fileName:   archivoPendiente.nombre,
+    fileType:   archivoPendiente.tipo,
+    fileBase64: archivoPendiente.base64
   })
   .then(function(r) {
     ocultarOverlay(); deshabilitarBotones(false);
@@ -401,7 +396,6 @@ function subirAdjuntoOC(tid) {
   .catch(function(e) { ocultarOverlay(); deshabilitarBotones(false); showToast('Error: ' + e, 'error'); });
 }
 
-// ── SETUP ────────────────────────────────────────────────────
 window.addEventListener('load', function() {
   setFechaDefault();
   renderTabla();
@@ -410,7 +404,6 @@ window.addEventListener('load', function() {
   var urlParams = new URLSearchParams(window.location.search);
   var aid = urlParams.get('accountId') || urlParams.get('account_id') || '';
 
-  // Si no viene por parámetro, leerlo del referrer (URL de Zoho al hacer clic en "Crear Pedido")
   if (!aid) {
     var ref = document.referrer || '';
     var matchRef = ref.match(/\/tab\/Accounts\/(\d+)/);
@@ -508,6 +501,7 @@ function volverBusqueda() {
   document.getElementById('screenBuscar').classList.remove('hidden');
   document.getElementById('inputBuscarCuenta').value = '';
   limpiarBtnDescarga();
+  limpiarAlertaProductos();
 }
 
 function mostrarModalTratos(cuentaData, tratos) {
@@ -707,8 +701,6 @@ function renderModoBadge() {
 function renderAcciones() {
   var bar = document.getElementById('accionesBar');
   var sec = document.getElementById('seccionProductos');
-
-  // Botón adjuntar O/C — siempre disponible en todos los modos
   var btnAdjuntar = '<button class="btn btn-adjuntar" id="btnAdjuntarOC" onclick="abrirSelectorArchivo()">📎 Adjuntar O/C</button>';
 
   if (modo === 'crear_sin_pedido') {
@@ -724,7 +716,6 @@ function renderAcciones() {
       '<button class="btn btn-ghost" onclick="cambiarModo(\'crear_sin_pedido\')">Solo crear trato</button>' +
       '<button class="btn btn-primary" id="btnGuardar" onclick="guardar(\'trato_y_pedido\')">Guardar pedido</button>';
   } else {
-    // modo editar
     sec.classList.remove('hidden');
     bar.innerHTML =
       btnAdjuntar +
@@ -734,7 +725,6 @@ function renderAcciones() {
       '<button class="btn btn-warn" id="btnPerseo" onclick="guardar(\'enviar_perseo\')">Enviar a Perseo</button>';
   }
 
-  // Re-renderizar el chip si había un archivo pendiente
   if (archivoPendiente) renderChipAdjunto(archivoPendiente.nombre);
 }
 
@@ -770,7 +760,14 @@ function agregarProducto(id) {
   var p = null;
   for (var i = 0; i < catalogo.length; i++) { if (catalogo[i].id === id) { p = catalogo[i]; break; } }
   if (!p) return;
-  for (var j = 0; j < lineas.length; j++) { if (lineas[j].productoId === id || (lineas[j].codigo && lineas[j].codigo === p.codigo)) { lineas[j].cantidad++; recalc(lineas[j]); renderTabla(); return; } }
+  for (var j = 0; j < lineas.length; j++) {
+    if (lineas[j].productoId === id || (lineas[j].codigo && lineas[j].codigo === p.codigo)) {
+      lineas[j].cantidad++;
+      recalc(lineas[j]);
+      renderTabla();
+      return;
+    }
+  }
   var iva = parseInt(p.iva) || 0;
   lineas.push({ productoId: p.id, nombre: p.nombre, codigo: p.codigo, stock: p.stock, precioUnit: p.precio, descuento: 0, precioFinal: p.precio, cantidad: 1, iva: iva, total: p.precio });
   renderTabla();
@@ -815,6 +812,23 @@ function actualizarTotales() {
   document.getElementById('tSubtotal').textContent = '$' + sub.toFixed(2);
   document.getElementById('tIva').textContent = '$' + iva.toFixed(2);
   document.getElementById('tTotal').textContent = '$' + r2(sub + iva).toFixed(2);
+}
+
+function mostrarAlertaProductos(errores) {
+  var div = document.getElementById('alertaProductos');
+  if (!errores || !errores.length) { div.innerHTML = ''; return; }
+  var items = errores.map(function(e) {
+    return '<li>' + escH(e.producto || 'Producto línea ' + e.linea) + '</li>';
+  }).join('');
+  div.innerHTML = '<div class="alerta-productos">' +
+    '<strong>⚠️ Los siguientes productos no se guardaron correctamente. Vuelve a guardar el pedido:</strong>' +
+    '<ul>' + items + '</ul>' +
+    '</div>';
+}
+
+function limpiarAlertaProductos() {
+  var div = document.getElementById('alertaProductos');
+  if (div) div.innerHTML = '';
 }
 
 function guardar(accion) {
@@ -871,12 +885,26 @@ function ejecutarGuardado(accion, aid, callback) {
   apiPost('crear_pedido_widget', payload)
     .then(function(data) {
       ocultarOverlay(); deshabilitarBotones(false);
-      if (data && data.ok) {
+      if (data && (data.ok || data.tratoId)) {
         if (data.tratoId) tratoId = data.tratoId;
-        var mensajes = { solo_trato: 'Trato creado', trato_y_pedido: 'Pedido guardado — ' + (data.detallesCreados || 0) + ' producto(s)', actualizar: 'Pedido actualizado' };
-        showToast(mensajes[accion] || 'Listo', 'ok');
+
+        // Verificar si hubo productos que no se guardaron
+        if (data.erroresLineas && data.erroresLineas.length > 0) {
+          mostrarAlertaProductos(data.erroresLineas);
+          showToast('⚠️ ' + data.erroresLineas.length + ' producto(s) no se guardaron. Revisa abajo.', 'warn');
+        } else {
+          limpiarAlertaProductos();
+          var total = data.detallesTotal || data.detallesCreados || 0;
+          var creados = data.detallesCreados || 0;
+          var mensajes = {
+            solo_trato:    'Trato creado',
+            trato_y_pedido:'Pedido guardado — ' + creados + ' de ' + total + ' producto(s)',
+            actualizar:    'Pedido actualizado — ' + creados + ' de ' + total + ' producto(s)'
+          };
+          showToast(mensajes[accion] || 'Listo', 'ok');
+        }
+
         if (modo !== 'editar') { modo = 'editar'; renderModoBadge(); renderAcciones(); }
-        // Si había archivo pendiente, subirlo ahora que ya existe el trato
         if (archivoPendiente && tratoId) {
           subirAdjuntoOC(tratoId);
         }
@@ -945,7 +973,6 @@ function validarCamposCuenta() {
 function mostrarAlertaCamposFaltantes(faltantes) {
   var aid = cuentaId || String(cuenta.id || '');
   var urlEditar = 'https://crm.zoho.com/crm/org818799139/tab/Accounts/' + aid + '/edit';
-  // Crear modal de aviso
   var existing = document.getElementById('modalCamposFaltantes');
   if (existing) existing.remove();
   var modal = document.createElement('div');
@@ -1005,10 +1032,10 @@ function resetFormulario() {
   document.getElementById('ordenCompra').value = '';
   document.getElementById('tratoTipo').value = '';
   document.getElementById('tratoClasificacion').value = '';
-  setFechaDefault(); limpiarBtnDescarga(); renderTabla();
+  setFechaDefault(); limpiarBtnDescarga(); limpiarAlertaProductos(); renderTabla();
 }
 function setFechaDefault() { var d = new Date(Date.now() + 30*24*60*60*1000); document.getElementById('fechaCierre').value = d.toISOString().slice(0,10); }
-function showToast(msg, tipo) { var t = document.getElementById('toast'); t.className = 'toast ' + tipo; t.textContent = msg; setTimeout(function() { t.className = 'toast'; }, 5000); }
+function showToast(msg, tipo) { var t = document.getElementById('toast'); t.className = 'toast ' + tipo; t.textContent = msg; setTimeout(function() { t.className = 'toast'; }, 6000); }
 function mostrarOverlay(msg) { document.getElementById('overlayMsg').textContent = msg || 'Procesando...'; document.getElementById('overlay').classList.add('active'); }
 function ocultarOverlay() { document.getElementById('overlay').classList.remove('active'); }
 function r2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
