@@ -295,26 +295,18 @@ function api(action, params) {
     });
 }
 
-// Envía el payload como form-encoded. Las lineas van en la URL para evitar
-// truncamiento del body cuando hay muchos productos.
 function apiPost(action, body) {
   var params = Object.assign({ action: action }, body || {});
-  var lineas = params.lineas;
-  delete params.lineas;
-
-  // Construir URL con action + lineas como query params
-  var lineasJson = lineas ? (Array.isArray(lineas) ? JSON.stringify(lineas) : lineas) : '[]';
-  var url = SCRIPT_URL + '?action=' + encodeURIComponent(action) + '&lineas=' + encodeURIComponent(lineasJson);
-
-  // El resto del payload va en el body
+  if (params.lineas && Array.isArray(params.lineas)) {
+    params.lineas = JSON.stringify(params.lineas);
+  }
   var encoded = Object.keys(params).filter(function(k) {
     return params[k] !== null && params[k] !== undefined;
   }).map(function(k) {
     var val = typeof params[k] === 'object' ? JSON.stringify(params[k]) : params[k];
     return encodeURIComponent(k) + '=' + encodeURIComponent(val);
   }).join('&');
-
-  return fetch(url, {
+  return fetch(SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: encoded,
@@ -882,7 +874,7 @@ function ejecutarGuardado(accion, aid, callback) {
     tratoClasificacion:document.getElementById('tratoClasificacion').value,
     accion:            accion,
     lineas: (accion !== 'solo_trato') ? lineas.map(function(l) {
-      return { p: l.codigo + ' - ' + l.nombre, c: l.cantidad, pr: l.precioUnit, d: l.descuento, pf: l.precioFinal, i: String(l.iva), e: l.stock };
+      return { producto: l.codigo + ' - ' + l.nombre, cantidad: l.cantidad, precio: l.precioUnit, descuento: l.descuento, precioFinal: l.precioFinal, iva: String(l.iva), existencia: l.stock };
     }) : []
   };
   if (tratoId) payload.tratoId = tratoId;
