@@ -298,9 +298,12 @@
       </select>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Nombre y apellido</label><input type="text" id="envioDestNombre"/></div>
+      <div class="form-group"><label>Nombres completos</label><input type="text" id="envioDestNombre"/></div>
       <div class="form-group"><label>Cédula</label><input type="text" id="envioDestCedula"/></div>
       <div class="form-group"><label>Contacto</label><input type="text" id="envioDestContacto"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Correo</label><input type="email" id="envioDestEmail"/></div>
     </div>
 
     <div class="card-title" style="margin-top:14px">Medio de envío</div>
@@ -873,6 +876,7 @@ function abrirModalEnvio() {
   document.getElementById('envioDestNombre').value = '';
   document.getElementById('envioDestCedula').value = cuenta.identificacion || '';
   document.getElementById('envioDestContacto').value = cuenta.Phone || cuenta.telefono || '';
+  document.getElementById('envioDestEmail').value = cuenta.Email || cuenta.correo || '';
   document.getElementById('btnDireccionSi').classList.remove('activo');
   document.getElementById('btnDireccionNo').classList.remove('activo');
   var radios = document.getElementsByName('medioEnvio');
@@ -931,6 +935,7 @@ function aplicarDestinatarioGuardado(idx) {
   document.getElementById('envioDestNombre').value   = d.nombre || '';
   document.getElementById('envioDestCedula').value   = d.cedula || '';
   document.getElementById('envioDestContacto').value = d.contacto || '';
+  document.getElementById('envioDestEmail').value    = d.email || '';
 }
 function confirmarEnvioYEnviarPerseo() {
   if (direccionEsLaMisma === null) { showToast('Confirma si la dirección de envío es la misma.', 'error'); return; }
@@ -950,6 +955,7 @@ function confirmarEnvioYEnviarPerseo() {
     envioDestNombre:   document.getElementById('envioDestNombre').value.trim(),
     envioDestCedula:   document.getElementById('envioDestCedula').value.trim(),
     envioDestContacto: document.getElementById('envioDestContacto').value.trim(),
+    envioDestEmail:    document.getElementById('envioDestEmail').value.trim(),
     envioMedio:        medioEl.value
   };
 
