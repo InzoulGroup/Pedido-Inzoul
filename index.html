@@ -291,26 +291,41 @@
     </div>
 
     <div class="card-title" style="margin-top:14px">Destinatario</div>
-    <div class="form-group" style="margin-bottom:8px">
-      <label>Destinatarios guardados de este cliente</label>
-      <select id="selectDestinatariosGuardados" onchange="aplicarDestinatarioGuardado(this.value)">
-        <option value="">- Nuevo destinatario -</option>
-      </select>
+    <div class="envio-direccion-actual">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Destinatario registrado en la cuenta:</div>
+      <div id="destinatarioActualTexto">-</div>
     </div>
-    <div class="form-row">
-      <div class="form-group"><label>Nombres completos</label><input type="text" id="envioDestNombre"/></div>
-      <div class="form-group"><label>Cédula</label><input type="text" id="envioDestCedula"/></div>
-      <div class="form-group"><label>Contacto</label><input type="text" id="envioDestContacto"/></div>
+    <div class="envio-si-no">
+      <button type="button" class="btn btn-primary" id="btnDestinatarioSi" onclick="confirmarDestinatarioActual(true)">Sí, es el mismo</button>
+      <button type="button" class="btn btn-ghost" id="btnDestinatarioNo" onclick="confirmarDestinatarioActual(false)">No, es otro destinatario</button>
     </div>
-    <div class="form-row">
-      <div class="form-group"><label>Correo</label><input type="email" id="envioDestEmail"/></div>
+
+    <div id="bloqueDestinatarioNuevo" style="margin-top:10px">
+      <div class="form-group" style="margin-bottom:8px">
+        <label>Destinatarios guardados de este cliente</label>
+        <select id="selectDestinatariosGuardados" onchange="aplicarDestinatarioGuardado(this.value)">
+          <option value="">- Nuevo destinatario -</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Nombres completos</label><input type="text" id="envioDestNombre"/></div>
+        <div class="form-group"><label>Cédula</label><input type="text" id="envioDestCedula"/></div>
+        <div class="form-group"><label>Contacto</label><input type="text" id="envioDestContacto"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Correo</label><input type="email" id="envioDestEmail"/></div>
+      </div>
     </div>
 
     <div class="card-title" style="margin-top:14px">Medio de envío</div>
     <div class="checklist-medio">
-      <label><input type="radio" name="medioEnvio" value="Transporte"/> Transporte</label>
-      <label><input type="radio" name="medioEnvio" value="Servientrega"/> Servientrega</label>
-      <label><input type="radio" name="medioEnvio" value="Delivery"/> Delivery</label>
+      <label><input type="radio" name="medioEnvio" value="Transporte" onchange="actualizarBloqueTransporte()"/> Transporte</label>
+      <label><input type="radio" name="medioEnvio" value="Servientrega" onchange="actualizarBloqueTransporte()"/> Servientrega</label>
+      <label><input type="radio" name="medioEnvio" value="Delivery" onchange="actualizarBloqueTransporte()"/> Delivery</label>
+    </div>
+    <div id="bloqueNombreTransporte" class="form-group hidden" style="margin-top:8px">
+      <label>Nombre del transporte</label>
+      <input type="text" id="envioTransporteNombre" placeholder="Ej. Trans Esmeraldas"/>
     </div>
 
     <div class="modal-actions" style="margin-top:16px">
@@ -340,6 +355,7 @@ var archivoPendiente  = null;
 var direccionesGuardadas   = [];
 var destinatariosGuardados = [];
 var direccionEsLaMisma     = null;
+var destinatarioEsElMismo  = null;
 function api(action, params) {
   var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
   Object.keys(params || {}).forEach(function(k) {
@@ -870,21 +886,30 @@ function guardar(accion) {
 // ============================================================
 function abrirModalEnvio() {
   direccionEsLaMisma = null;
+  destinatarioEsElMismo = null;
   document.getElementById('envioDireccion').value = '';
   document.getElementById('envioCiudad').value = '';
   document.getElementById('envioProvincia').value = '';
   document.getElementById('envioDestNombre').value = '';
-  document.getElementById('envioDestCedula').value = cuenta.identificacion || '';
-  document.getElementById('envioDestContacto').value = cuenta.Phone || cuenta.telefono || '';
-  document.getElementById('envioDestEmail').value = cuenta.Email || cuenta.correo || '';
+  document.getElementById('envioDestCedula').value = '';
+  document.getElementById('envioDestContacto').value = '';
+  document.getElementById('envioDestEmail').value = '';
+  document.getElementById('envioTransporteNombre').value = '';
+  document.getElementById('bloqueNombreTransporte').classList.add('hidden');
   document.getElementById('btnDireccionSi').classList.remove('activo');
   document.getElementById('btnDireccionNo').classList.remove('activo');
+  document.getElementById('btnDestinatarioSi').classList.remove('activo');
+  document.getElementById('btnDestinatarioNo').classList.remove('activo');
   var radios = document.getElementsByName('medioEnvio');
   for (var i = 0; i < radios.length; i++) radios[i].checked = false;
 
   var dirActual = [cuenta.Billing_Street, cuenta.Billing_City, cuenta.Billing_State]
     .filter(function(v) { return v; }).join(', ');
   document.getElementById('direccionActualTexto').textContent = dirActual || 'Sin dirección registrada en la cuenta';
+
+  var destActual = [cuenta.Account_Name || cuenta.nombre, cuenta.identificacion, cuenta.Phone || cuenta.telefono]
+    .filter(function(v) { return v; }).join(' — ');
+  document.getElementById('destinatarioActualTexto').textContent = destActual || 'Sin datos de contacto registrados en la cuenta';
 
   var selDir = document.getElementById('selectDireccionesGuardadas');
   var selDest = document.getElementById('selectDestinatariosGuardados');
@@ -937,26 +962,61 @@ function aplicarDestinatarioGuardado(idx) {
   document.getElementById('envioDestContacto').value = d.contacto || '';
   document.getElementById('envioDestEmail').value    = d.email || '';
 }
+function confirmarDestinatarioActual(esElMismo) {
+  destinatarioEsElMismo = esElMismo;
+  document.getElementById('btnDestinatarioSi').classList.toggle('activo', esElMismo === true);
+  document.getElementById('btnDestinatarioNo').classList.toggle('activo', esElMismo === false);
+  if (esElMismo) {
+    document.getElementById('envioDestNombre').value   = cuenta.Account_Name || cuenta.nombre || '';
+    document.getElementById('envioDestCedula').value   = cuenta.identificacion || '';
+    document.getElementById('envioDestContacto').value = cuenta.Phone || cuenta.telefono || '';
+    document.getElementById('envioDestEmail').value    = cuenta.Email || cuenta.correo || '';
+  } else {
+    document.getElementById('envioDestNombre').value   = '';
+    document.getElementById('envioDestCedula').value   = '';
+    document.getElementById('envioDestContacto').value = '';
+    document.getElementById('envioDestEmail').value    = '';
+  }
+}
+function actualizarBloqueTransporte() {
+  var radios = document.getElementsByName('medioEnvio');
+  var esTransporte = false;
+  for (var i = 0; i < radios.length; i++) {
+    if (radios[i].checked && radios[i].value === 'Transporte') { esTransporte = true; break; }
+  }
+  document.getElementById('bloqueNombreTransporte').classList.toggle('hidden', !esTransporte);
+}
 function confirmarEnvioYEnviarPerseo() {
   if (direccionEsLaMisma === null) { showToast('Confirma si la dirección de envío es la misma.', 'error'); return; }
+  if (destinatarioEsElMismo === null) { showToast('Confirma si el destinatario es el mismo registrado en la cuenta.', 'error'); return; }
 
   var direccion = document.getElementById('envioDireccion').value.trim();
   if (!direccion) { showToast('Completa la dirección de envío.', 'error'); return; }
+
+  var destNombre = document.getElementById('envioDestNombre').value.trim();
+  if (!destNombre) { showToast('Completa el nombre del destinatario.', 'error'); return; }
 
   var medioEl = null;
   var radios = document.getElementsByName('medioEnvio');
   for (var i = 0; i < radios.length; i++) { if (radios[i].checked) { medioEl = radios[i]; break; } }
   if (!medioEl) { showToast('Selecciona el medio de envío.', 'error'); return; }
 
+  var transporteNombre = document.getElementById('envioTransporteNombre').value.trim();
+  if (medioEl.value === 'Transporte' && !transporteNombre) {
+    showToast('Escribe el nombre del transporte.', 'error');
+    return;
+  }
+
   var datosEnvio = {
     envioDireccion:    direccion,
     envioCiudad:       document.getElementById('envioCiudad').value.trim(),
     envioProvincia:    document.getElementById('envioProvincia').value.trim(),
-    envioDestNombre:   document.getElementById('envioDestNombre').value.trim(),
+    envioDestNombre:   destNombre,
     envioDestCedula:   document.getElementById('envioDestCedula').value.trim(),
     envioDestContacto: document.getElementById('envioDestContacto').value.trim(),
     envioDestEmail:    document.getElementById('envioDestEmail').value.trim(),
-    envioMedio:        medioEl.value
+    envioMedio:        medioEl.value,
+    envioTransporteNombre: medioEl.value === 'Transporte' ? transporteNombre : ''
   };
 
   cerrarModalEnvio();
