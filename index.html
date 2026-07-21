@@ -136,6 +136,8 @@
   @keyframes parpadeo{0%,100%{opacity:1}50%{opacity:.35}}
   .aviso-correccion{margin-top:10px;padding:10px 12px;background:#fff7ed;border:2px solid #f59e0b;border-radius:6px;font-size:13px;font-weight:500;}
   .aviso-correccion a{color:#b45309;font-weight:700;text-decoration:underline;}
+  .nota-guardado{margin-top:6px;font-size:12px;color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;}
+  .nota-guardado.nota-cuenta{color:#b45309;background:#fff7ed;border-color:#fed7aa;}
   .checklist-medio{display:flex;gap:14px;flex-wrap:wrap;padding:6px 0;}
   .checklist-medio label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;}
   .checklist-medio input{width:auto;}
@@ -298,6 +300,7 @@
         <div class="form-group"><label>Ciudad</label><input type="text" id="envioCiudad"/></div>
         <div class="form-group"><label>Provincia</label><input type="text" id="envioProvincia"/></div>
       </div>
+      <div id="notaGuardadoDireccion" class="hidden nota-guardado"></div>
     </div>
 
     <div class="card-title" style="margin-top:14px">Destinatario <span id="indDestinatarioIncompleta" class="hidden badge-incompleto">↓ falta completar</span></div>
@@ -330,6 +333,7 @@
       <div class="form-row">
         <div class="form-group"><label>Correo</label><input type="email" id="envioDestEmail"/></div>
       </div>
+      <div id="notaGuardadoDestinatario" class="hidden nota-guardado"></div>
     </div>
 
     <div class="card-title" style="margin-top:14px">Medio de envío <span id="indMedioIncompleto" class="hidden badge-incompleto">↓ falta completar</span></div>
@@ -398,11 +402,14 @@ function bloquearCamposDireccion_(bloquear) {
   });
 }
 function habilitarEdicionDireccion() {
-  direccionActualizarCuenta = true;
+  // Solo si la dirección venía de la cuenta (Billing_Street) la corrección
+  // se sube también a la Cuenta en Zoho. Si venía de una dirección guardada
+  // (Nota histórica), la corrección solo se guarda en el historial.
+  if (direccionOrigen === 'cuenta') direccionActualizarCuenta = true;
   bloquearCamposDireccion_(false);
   document.getElementById('avisoDireccionCorrecta').classList.add('hidden');
   document.getElementById('envioDireccion').focus();
-  showToast('Corrige la dirección. Se guardará la corrección al enviar el pedido.', 'ok');
+  actualizarNotaGuardadoDireccion_();
   revisarCompletitudEnvio();
 }
 function bloquearCamposDestinatario_(bloquear) {
@@ -414,8 +421,28 @@ function habilitarEdicionDestinatario() {
   bloquearCamposDestinatario_(false);
   document.getElementById('avisoDestinatarioCorrecta').classList.add('hidden');
   document.getElementById('envioDestNombre').focus();
-  showToast('Corrige el destinatario. Se guardará la corrección al enviar el pedido.', 'ok');
+  actualizarNotaGuardadoDestinatario_();
   revisarCompletitudEnvio();
+}
+function actualizarNotaGuardadoDireccion_() {
+  var el = document.getElementById('notaGuardadoDireccion');
+  var bloqueado = document.getElementById('envioDireccion').readOnly;
+  if (bloqueado) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  if (direccionActualizarCuenta) {
+    el.classList.add('nota-cuenta');
+    el.textContent = '📌 Esta corrección se guardará como la dirección registrada en la cuenta de Zoho, y también en el historial.';
+  } else {
+    el.classList.remove('nota-cuenta');
+    el.textContent = '📌 Esta dirección se guardará en el historial de direcciones de este cliente (no modifica la dirección principal de la cuenta).';
+  }
+}
+function actualizarNotaGuardadoDestinatario_() {
+  var el = document.getElementById('notaGuardadoDestinatario');
+  var bloqueado = document.getElementById('envioDestNombre').readOnly;
+  if (bloqueado) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.textContent = '📌 Este destinatario se guardará en el historial de destinatarios de este cliente.';
 }
 function revisarCompletitudEnvio() {
   var direccion  = document.getElementById('envioDireccion').value.trim();
@@ -983,6 +1010,8 @@ function abrirModalEnvio() {
   bloquearCamposDestinatario_(false);
   document.getElementById('avisoDireccionCorrecta').classList.add('hidden');
   document.getElementById('avisoDestinatarioCorrecta').classList.add('hidden');
+  document.getElementById('notaGuardadoDireccion').classList.add('hidden');
+  document.getElementById('notaGuardadoDestinatario').classList.add('hidden');
   document.getElementById('envioDireccion').value = '';
   document.getElementById('envioCiudad').value = '';
   document.getElementById('envioProvincia').value = '';
@@ -1062,6 +1091,7 @@ function confirmarDireccionActual(esLaMisma) {
     document.getElementById('envioCiudad').value    = '';
     document.getElementById('envioProvincia').value = '';
   }
+  actualizarNotaGuardadoDireccion_();
   revisarCompletitudEnvio();
 }
 function aplicarDireccionGuardada(idx) {
@@ -1070,6 +1100,7 @@ function aplicarDireccionGuardada(idx) {
     direccionActualizarCuenta = false;
     bloquearCamposDireccion_(false);
     document.getElementById('avisoDireccionCorrecta').classList.add('hidden');
+    actualizarNotaGuardadoDireccion_();
     revisarCompletitudEnvio();
     return;
   }
@@ -1082,6 +1113,7 @@ function aplicarDireccionGuardada(idx) {
   document.getElementById('envioProvincia').value = d.provincia || '';
   bloquearCamposDireccion_(true);
   document.getElementById('avisoDireccionCorrecta').classList.remove('hidden');
+  actualizarNotaGuardadoDireccion_();
   revisarCompletitudEnvio();
 }
 function aplicarDestinatarioGuardado(idx) {
@@ -1089,6 +1121,7 @@ function aplicarDestinatarioGuardado(idx) {
     destinatarioOrigen = 'nueva';
     bloquearCamposDestinatario_(false);
     document.getElementById('avisoDestinatarioCorrecta').classList.add('hidden');
+    actualizarNotaGuardadoDestinatario_();
     revisarCompletitudEnvio();
     return;
   }
@@ -1101,6 +1134,7 @@ function aplicarDestinatarioGuardado(idx) {
   document.getElementById('envioDestEmail').value    = d.email || '';
   bloquearCamposDestinatario_(true);
   document.getElementById('avisoDestinatarioCorrecta').classList.remove('hidden');
+  actualizarNotaGuardadoDestinatario_();
   revisarCompletitudEnvio();
 }
 function confirmarDestinatarioActual(esElMismo) {
@@ -1130,6 +1164,7 @@ function confirmarDestinatarioActual(esElMismo) {
     document.getElementById('envioDestContacto').value = '';
     document.getElementById('envioDestEmail').value    = '';
   }
+  actualizarNotaGuardadoDestinatario_();
   revisarCompletitudEnvio();
 }
 function actualizarBloqueTransporte() {
@@ -1199,7 +1234,9 @@ function mostrarResumenEnvio() {
   if (ciudad)    html += '<div><b>Ciudad:</b> ' + escH(ciudad) + '</div>';
   if (provincia) html += '<div><b>Provincia:</b> ' + escH(provincia) + '</div>';
   if (direccionActualizarCuenta) {
-    html += '<div style="color:#b45309;margin-top:4px">Esta corrección también se guardará en la cuenta de Zoho.</div>';
+    html += '<div style="color:#b45309;margin-top:4px">📌 Esta corrección también se guardará en la cuenta de Zoho.</div>';
+  } else if (direccionOrigen !== 'cuenta') {
+    html += '<div style="color:#6b7280;margin-top:4px;font-size:12px">📌 Esta dirección se guardará en el historial de este cliente.</div>';
   }
   html += '<div style="margin-top:10px;margin-bottom:6px;font-weight:600">' + escH(textoOrigenDestinatario_(destinatarioOrigen)) + '</div>';
   html += '<div><b>Destinatario:</b> ' + escH(destNombre) + '</div>';
