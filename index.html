@@ -343,6 +343,11 @@
       <input type="text" id="envioTransporteNombre" placeholder="Ej. Trans Esmeraldas"/>
     </div>
 
+    <div class="card-title" style="margin-top:14px">Notas adicionales</div>
+    <div class="form-group">
+      <textarea id="envioNotas" rows="4" style="width:100%;min-height:90px;border:1px solid var(--border2);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);resize:vertical" placeholder="Ej. Llamar antes de entregar, dejar en portería, horario de recepción, etc."></textarea>
+    </div>
+
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-ghost" onclick="cerrarModalEnvio()">Cancelar</button>
       <button class="btn btn-warn" id="btnConfirmarEnvio" onclick="mostrarResumenEnvio()">Confirmar y enviar a Perseo</button>
@@ -986,6 +991,7 @@ function abrirModalEnvio() {
   document.getElementById('envioDestContacto').value = '';
   document.getElementById('envioDestEmail').value = '';
   document.getElementById('envioTransporteNombre').value = '';
+  document.getElementById('envioNotas').value = '';
   document.getElementById('bloqueNombreTransporte').classList.add('hidden');
   document.getElementById('btnDireccionSi').classList.remove('activo');
   document.getElementById('btnDireccionNo').classList.remove('activo');
@@ -1171,6 +1177,7 @@ function mostrarResumenEnvio() {
   var destCedula   = document.getElementById('envioDestCedula').value.trim();
   var destContacto = document.getElementById('envioDestContacto').value.trim();
   var destEmail    = document.getElementById('envioDestEmail').value.trim();
+  var notas        = document.getElementById('envioNotas').value.trim();
 
   datosEnvioPendiente = {
     envioDireccion:    direccion,
@@ -1182,7 +1189,8 @@ function mostrarResumenEnvio() {
     envioDestEmail:    destEmail,
     envioMedio:        medioEl.value,
     envioTransporteNombre: medioEl.value === 'Transporte' ? transporteNombre : '',
-    envioActualizarDireccionCuenta: direccionActualizarCuenta === true
+    envioActualizarDireccionCuenta: direccionActualizarCuenta === true,
+    envioNotas: notas
   };
 
   var html = '';
@@ -1201,6 +1209,9 @@ function mostrarResumenEnvio() {
   html += '<div style="margin-top:10px"><b>Medio de envío:</b> ' + escH(medioEl.value) + '</div>';
   if (datosEnvioPendiente.envioTransporteNombre) {
     html += '<div><b>Transporte:</b> ' + escH(datosEnvioPendiente.envioTransporteNombre) + '</div>';
+  }
+  if (notas) {
+    html += '<div style="margin-top:10px"><b>Notas adicionales:</b><br>' + escH(notas).replace(/\n/g, '<br>') + '</div>';
   }
 
   document.getElementById('resumenEnvioContenido').innerHTML = html;
