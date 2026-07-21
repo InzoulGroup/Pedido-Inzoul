@@ -132,6 +132,10 @@
   .envio-si-no{display:flex;gap:8px;margin-bottom:4px;}
   .envio-si-no .btn{flex:1;}
   .envio-si-no .btn.activo{background:#dc2626;color:#fff;border-color:#dc2626;outline:none;}
+  .badge-incompleto{color:#dc2626;font-weight:700;text-transform:none;letter-spacing:normal;font-size:12px;margin-left:6px;animation:parpadeo 1.4s infinite;}
+  @keyframes parpadeo{0%,100%{opacity:1}50%{opacity:.35}}
+  .aviso-correccion{margin-top:10px;padding:10px 12px;background:#fff7ed;border:2px solid #f59e0b;border-radius:6px;font-size:13px;font-weight:500;}
+  .aviso-correccion a{color:#b45309;font-weight:700;text-decoration:underline;}
   .checklist-medio{display:flex;gap:14px;flex-wrap:wrap;padding:6px 0;}
   .checklist-medio label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;}
   .checklist-medio input{width:auto;}
@@ -266,7 +270,7 @@
     <h3>Confirmar datos de envío</h3>
     <p>Antes de enviar este pedido a Perseo, confirma los datos de envío.</p>
 
-    <div class="card-title" style="margin-top:4px">Dirección de envío</div>
+    <div class="card-title" style="margin-top:4px">Dirección de envío <span id="indDireccionIncompleta" class="hidden badge-incompleto">→ falta completar</span></div>
     <div class="envio-direccion-actual">
       <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Dirección registrada en la cuenta:</div>
       <div id="direccionActualTexto">-</div>
@@ -276,9 +280,9 @@
       <button type="button" class="btn btn-ghost" id="btnDireccionNo" onclick="confirmarDireccionActual(false)">No, es otra dirección</button>
     </div>
 
-    <div id="avisoDireccionCorrecta" class="hidden" style="margin-top:10px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;font-size:12.5px">
-      ¿Los datos de esta dirección son correctos?
-      <a href="#" onclick="habilitarEdicionDireccion(); return false;" style="color:#b45309;font-weight:600;text-decoration:underline">No, quiero corregirlos</a>
+    <div id="avisoDireccionCorrecta" class="hidden aviso-correccion">
+      ⚠ ¿Los datos de esta dirección son correctos?
+      <a href="#" onclick="habilitarEdicionDireccion(); return false;">No, quiero corregirlos</a>
     </div>
     <div id="bloqueDireccionNueva" style="margin-top:10px">
       <div class="form-group" style="margin-bottom:8px">
@@ -296,7 +300,7 @@
       </div>
     </div>
 
-    <div class="card-title" style="margin-top:14px">Destinatario</div>
+    <div class="card-title" style="margin-top:14px">Destinatario <span id="indDestinatarioIncompleta" class="hidden badge-incompleto">→ falta completar</span></div>
     <div class="envio-direccion-actual">
       <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Destinatario registrado en la cuenta:</div>
       <div id="destinatarioActualTexto">-</div>
@@ -304,6 +308,11 @@
     <div class="envio-si-no">
       <button type="button" class="btn btn-ghost" id="btnDestinatarioSi" onclick="confirmarDestinatarioActual(true)">Sí, es el mismo</button>
       <button type="button" class="btn btn-ghost" id="btnDestinatarioNo" onclick="confirmarDestinatarioActual(false)">No, es otro destinatario</button>
+    </div>
+
+    <div id="avisoDestinatarioCorrecta" class="hidden aviso-correccion">
+      ⚠ ¿Los datos de este destinatario son correctos?
+      <a href="#" onclick="habilitarEdicionDestinatario(); return false;">No, quiero corregirlos</a>
     </div>
 
     <div id="bloqueDestinatarioNuevo" style="margin-top:10px">
@@ -323,7 +332,7 @@
       </div>
     </div>
 
-    <div class="card-title" style="margin-top:14px">Medio de envío</div>
+    <div class="card-title" style="margin-top:14px">Medio de envío <span id="indMedioIncompleto" class="hidden badge-incompleto">→ falta completar</span></div>
     <div class="checklist-medio">
       <label><input type="radio" name="medioEnvio" value="Transporte" onchange="actualizarBloqueTransporte()"/> Transporte</label>
       <label><input type="radio" name="medioEnvio" value="Servientrega" onchange="actualizarBloqueTransporte()"/> Servientrega</label>
@@ -388,19 +397,48 @@ function habilitarEdicionDireccion() {
   bloquearCamposDireccion_(false);
   document.getElementById('avisoDireccionCorrecta').classList.add('hidden');
   document.getElementById('envioDireccion').focus();
-  showToast('Corrige la dirección. Se actualizará también en la cuenta al enviar el pedido.', 'ok');
+  showToast('Corrige la dirección. Se guardará la corrección al enviar el pedido.', 'ok');
+  revisarCompletitudEnvio();
+}
+function bloquearCamposDestinatario_(bloquear) {
+  ['envioDestNombre','envioDestCedula','envioDestContacto','envioDestEmail'].forEach(function(id) {
+    document.getElementById(id).readOnly = bloquear;
+  });
+}
+function habilitarEdicionDestinatario() {
+  bloquearCamposDestinatario_(false);
+  document.getElementById('avisoDestinatarioCorrecta').classList.add('hidden');
+  document.getElementById('envioDestNombre').focus();
+  showToast('Corrige el destinatario. Se guardará la corrección al enviar el pedido.', 'ok');
+  revisarCompletitudEnvio();
+}
+function revisarCompletitudEnvio() {
+  var direccion  = document.getElementById('envioDireccion').value.trim();
+  var destNombre = document.getElementById('envioDestNombre').value.trim();
+  var medioEl = null;
+  var radios = document.getElementsByName('medioEnvio');
+  for (var i = 0; i < radios.length; i++) { if (radios[i].checked) { medioEl = radios[i]; break; } }
+  var transporteNombre = document.getElementById('envioTransporteNombre').value.trim();
+
+  document.getElementById('indDireccionIncompleta').classList.toggle('hidden', !!direccion);
+  document.getElementById('indDestinatarioIncompleta').classList.toggle('hidden', !!destNombre);
+  var medioIncompleto = !medioEl || (medioEl.value === 'Transporte' && !transporteNombre);
+  document.getElementById('indMedioIncompleto').classList.toggle('hidden', !medioIncompleto);
 }
 ['envioDireccion','envioCiudad','envioProvincia'].forEach(function(id) {
   document.getElementById(id).addEventListener('input', function() {
     if (direccionOrigen === 'cuenta') direccionActualizarCuenta = true;
     if (direccionOrigen === 'cuenta' || direccionOrigen === 'guardada') direccionOrigen = 'nueva';
+    revisarCompletitudEnvio();
   });
 });
 ['envioDestNombre','envioDestCedula','envioDestContacto','envioDestEmail'].forEach(function(id) {
   document.getElementById(id).addEventListener('input', function() {
     if (destinatarioOrigen === 'cuenta' || destinatarioOrigen === 'guardada') destinatarioOrigen = 'nueva';
+    revisarCompletitudEnvio();
   });
 });
+document.getElementById('envioTransporteNombre').addEventListener('input', revisarCompletitudEnvio);
 function api(action, params) {
   var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
   Object.keys(params || {}).forEach(function(k) {
@@ -937,7 +975,9 @@ function abrirModalEnvio() {
   direccionActualizarCuenta = false;
   datosEnvioPendiente = null;
   bloquearCamposDireccion_(false);
+  bloquearCamposDestinatario_(false);
   document.getElementById('avisoDireccionCorrecta').classList.add('hidden');
+  document.getElementById('avisoDestinatarioCorrecta').classList.add('hidden');
   document.getElementById('envioDireccion').value = '';
   document.getElementById('envioCiudad').value = '';
   document.getElementById('envioProvincia').value = '';
@@ -953,6 +993,7 @@ function abrirModalEnvio() {
   document.getElementById('btnDestinatarioNo').classList.remove('activo');
   var radios = document.getElementsByName('medioEnvio');
   for (var i = 0; i < radios.length; i++) radios[i].checked = false;
+  revisarCompletitudEnvio();
 
   var dirActual = [cuenta.Billing_Street, cuenta.Billing_City, cuenta.Billing_State]
     .filter(function(v) { return v; }).join(', ');
@@ -1017,19 +1058,33 @@ function confirmarDireccionActual(esLaMisma) {
   }
 }
 function aplicarDireccionGuardada(idx) {
-  if (idx === '') return;
+  if (idx === '') {
+    direccionOrigen = 'nueva';
+    direccionActualizarCuenta = false;
+    bloquearCamposDireccion_(false);
+    document.getElementById('avisoDireccionCorrecta').classList.add('hidden');
+    revisarCompletitudEnvio();
+    return;
+  }
   var d = direccionesGuardadas[Number(idx)];
   if (!d) return;
   direccionOrigen = 'guardada';
   direccionActualizarCuenta = false;
-  bloquearCamposDireccion_(false);
-  document.getElementById('avisoDireccionCorrecta').classList.add('hidden');
   document.getElementById('envioDireccion').value = d.direccion || '';
   document.getElementById('envioCiudad').value    = d.ciudad || '';
   document.getElementById('envioProvincia').value = d.provincia || '';
+  bloquearCamposDireccion_(true);
+  document.getElementById('avisoDireccionCorrecta').classList.remove('hidden');
+  revisarCompletitudEnvio();
 }
 function aplicarDestinatarioGuardado(idx) {
-  if (idx === '') return;
+  if (idx === '') {
+    destinatarioOrigen = 'nueva';
+    bloquearCamposDestinatario_(false);
+    document.getElementById('avisoDestinatarioCorrecta').classList.add('hidden');
+    revisarCompletitudEnvio();
+    return;
+  }
   var d = destinatariosGuardados[Number(idx)];
   if (!d) return;
   destinatarioOrigen = 'guardada';
@@ -1037,6 +1092,9 @@ function aplicarDestinatarioGuardado(idx) {
   document.getElementById('envioDestCedula').value   = d.cedula || '';
   document.getElementById('envioDestContacto').value = d.contacto || '';
   document.getElementById('envioDestEmail').value    = d.email || '';
+  bloquearCamposDestinatario_(true);
+  document.getElementById('avisoDestinatarioCorrecta').classList.remove('hidden');
+  revisarCompletitudEnvio();
 }
 function confirmarDestinatarioActual(esElMismo) {
   destinatarioEsElMismo = esElMismo;
@@ -1050,14 +1108,22 @@ function confirmarDestinatarioActual(esElMismo) {
     document.getElementById('envioDestEmail').value    = cuenta.Email || cuenta.correo || '';
     if (!cuenta.Account_Name && !cuenta.nombre && !cuenta.identificacion) {
       showToast('La cuenta no tiene datos de contacto registrados. Escribe un destinatario nuevo.', 'error');
+      bloquearCamposDestinatario_(false);
+      document.getElementById('avisoDestinatarioCorrecta').classList.add('hidden');
+    } else {
+      bloquearCamposDestinatario_(true);
+      document.getElementById('avisoDestinatarioCorrecta').classList.remove('hidden');
     }
   } else {
     destinatarioOrigen = 'nueva';
+    bloquearCamposDestinatario_(false);
+    document.getElementById('avisoDestinatarioCorrecta').classList.add('hidden');
     document.getElementById('envioDestNombre').value   = '';
     document.getElementById('envioDestCedula').value   = '';
     document.getElementById('envioDestContacto').value = '';
     document.getElementById('envioDestEmail').value    = '';
   }
+  revisarCompletitudEnvio();
 }
 function actualizarBloqueTransporte() {
   var radios = document.getElementsByName('medioEnvio');
@@ -1066,6 +1132,7 @@ function actualizarBloqueTransporte() {
     if (radios[i].checked && radios[i].value === 'Transporte') { esTransporte = true; break; }
   }
   document.getElementById('bloqueNombreTransporte').classList.toggle('hidden', !esTransporte);
+  revisarCompletitudEnvio();
 }
 function textoOrigenDireccion_(origen) {
   if (origen === 'cuenta')   return 'Estás enviando a la misma dirección registrada en la cuenta.';
