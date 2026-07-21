@@ -330,7 +330,19 @@
 
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-ghost" onclick="cerrarModalEnvio()">Cancelar</button>
-      <button class="btn btn-warn" id="btnConfirmarEnvio" onclick="confirmarEnvioYEnviarPerseo()">Confirmar y enviar a Perseo</button>
+      <button class="btn btn-warn" id="btnConfirmarEnvio" onclick="mostrarResumenEnvio()">Confirmar y enviar a Perseo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalResumenEnvio">
+  <div class="modal-box" style="max-width:560px">
+    <h3>Revisa antes de enviar</h3>
+    <p>Esto es exactamente lo que se enviará por correo a logística y facturación. Si algo está mal, da clic en "Corregir".</p>
+    <div id="resumenEnvioContenido" style="font-size:13px;line-height:1.7;background:var(--bg-soft,#f6f6f8);border-radius:8px;padding:10px 12px;margin-top:8px"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="corregirEnvio()">Corregir</button>
+      <button class="btn btn-warn" onclick="enviarPerseoConfirmado()">Confirmar y enviar a Perseo</button>
     </div>
   </div>
 </div>
@@ -356,6 +368,19 @@ var direccionesGuardadas   = [];
 var destinatariosGuardados = [];
 var direccionEsLaMisma     = null;
 var destinatarioEsElMismo  = null;
+var direccionOrigen        = null; // 'cuenta' | 'nueva' | 'guardada'
+var destinatarioOrigen     = null; // 'cuenta' | 'nueva' | 'guardada'
+var datosEnvioPendiente    = null;
+['envioDireccion','envioCiudad','envioProvincia'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', function() {
+    if (direccionOrigen === 'cuenta' || direccionOrigen === 'guardada') direccionOrigen = 'nueva';
+  });
+});
+['envioDestNombre','envioDestCedula','envioDestContacto','envioDestEmail'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', function() {
+    if (destinatarioOrigen === 'cuenta' || destinatarioOrigen === 'guardada') destinatarioOrigen = 'nueva';
+  });
+});
 function api(action, params) {
   var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
   Object.keys(params || {}).forEach(function(k) {
@@ -887,6 +912,9 @@ function guardar(accion) {
 function abrirModalEnvio() {
   direccionEsLaMisma = null;
   destinatarioEsElMismo = null;
+  direccionOrigen = null;
+  destinatarioOrigen = null;
+  datosEnvioPendiente = null;
   document.getElementById('envioDireccion').value = '';
   document.getElementById('envioCiudad').value = '';
   document.getElementById('envioProvincia').value = '';
@@ -934,21 +962,33 @@ function abrirModalEnvio() {
 }
 function cerrarModalEnvio() {
   document.getElementById('modalEnvio').classList.add('hidden');
+  document.getElementById('modalResumenEnvio').classList.add('hidden');
+  datosEnvioPendiente = null;
 }
 function confirmarDireccionActual(esLaMisma) {
   direccionEsLaMisma = esLaMisma;
   document.getElementById('btnDireccionSi').classList.toggle('activo', esLaMisma === true);
   document.getElementById('btnDireccionNo').classList.toggle('activo', esLaMisma === false);
   if (esLaMisma) {
+    direccionOrigen = 'cuenta';
     document.getElementById('envioDireccion').value = cuenta.Billing_Street || '';
     document.getElementById('envioCiudad').value    = cuenta.Billing_City || '';
     document.getElementById('envioProvincia').value = cuenta.Billing_State || '';
+    if (!cuenta.Billing_Street && !cuenta.Billing_City && !cuenta.Billing_State) {
+      showToast('La cuenta no tiene dirección registrada. Escribe una dirección nueva.', 'error');
+    }
+  } else {
+    direccionOrigen = 'nueva';
+    document.getElementById('envioDireccion').value = '';
+    document.getElementById('envioCiudad').value    = '';
+    document.getElementById('envioProvincia').value = '';
   }
 }
 function aplicarDireccionGuardada(idx) {
   if (idx === '') return;
   var d = direccionesGuardadas[Number(idx)];
   if (!d) return;
+  direccionOrigen = 'guardada';
   document.getElementById('envioDireccion').value = d.direccion || '';
   document.getElementById('envioCiudad').value    = d.ciudad || '';
   document.getElementById('envioProvincia').value = d.provincia || '';
@@ -957,6 +997,7 @@ function aplicarDestinatarioGuardado(idx) {
   if (idx === '') return;
   var d = destinatariosGuardados[Number(idx)];
   if (!d) return;
+  destinatarioOrigen = 'guardada';
   document.getElementById('envioDestNombre').value   = d.nombre || '';
   document.getElementById('envioDestCedula').value   = d.cedula || '';
   document.getElementById('envioDestContacto').value = d.contacto || '';
@@ -967,11 +1008,16 @@ function confirmarDestinatarioActual(esElMismo) {
   document.getElementById('btnDestinatarioSi').classList.toggle('activo', esElMismo === true);
   document.getElementById('btnDestinatarioNo').classList.toggle('activo', esElMismo === false);
   if (esElMismo) {
+    destinatarioOrigen = 'cuenta';
     document.getElementById('envioDestNombre').value   = cuenta.Account_Name || cuenta.nombre || '';
     document.getElementById('envioDestCedula').value   = cuenta.identificacion || '';
     document.getElementById('envioDestContacto').value = cuenta.Phone || cuenta.telefono || '';
     document.getElementById('envioDestEmail').value    = cuenta.Email || cuenta.correo || '';
+    if (!cuenta.Account_Name && !cuenta.nombre && !cuenta.identificacion) {
+      showToast('La cuenta no tiene datos de contacto registrados. Escribe un destinatario nuevo.', 'error');
+    }
   } else {
+    destinatarioOrigen = 'nueva';
     document.getElementById('envioDestNombre').value   = '';
     document.getElementById('envioDestCedula').value   = '';
     document.getElementById('envioDestContacto').value = '';
@@ -986,7 +1032,17 @@ function actualizarBloqueTransporte() {
   }
   document.getElementById('bloqueNombreTransporte').classList.toggle('hidden', !esTransporte);
 }
-function confirmarEnvioYEnviarPerseo() {
+function textoOrigenDireccion_(origen) {
+  if (origen === 'cuenta')   return 'Estás enviando a la misma dirección registrada en la cuenta.';
+  if (origen === 'guardada') return 'Estás enviando a una dirección previamente registrada para este cliente.';
+  return 'Estás enviando a una dirección nueva.';
+}
+function textoOrigenDestinatario_(origen) {
+  if (origen === 'cuenta')   return 'El destinatario es el mismo contacto registrado en la cuenta.';
+  if (origen === 'guardada') return 'El destinatario es uno previamente registrado para este cliente.';
+  return 'El destinatario es nuevo.';
+}
+function mostrarResumenEnvio() {
   if (direccionEsLaMisma === null) { showToast('Confirma si la dirección de envío es la misma.', 'error'); return; }
   if (destinatarioEsElMismo === null) { showToast('Confirma si el destinatario es el mismo registrado en la cuenta.', 'error'); return; }
 
@@ -1007,19 +1063,52 @@ function confirmarEnvioYEnviarPerseo() {
     return;
   }
 
-  var datosEnvio = {
+  var ciudad    = document.getElementById('envioCiudad').value.trim();
+  var provincia = document.getElementById('envioProvincia').value.trim();
+  var destCedula   = document.getElementById('envioDestCedula').value.trim();
+  var destContacto = document.getElementById('envioDestContacto').value.trim();
+  var destEmail    = document.getElementById('envioDestEmail').value.trim();
+
+  datosEnvioPendiente = {
     envioDireccion:    direccion,
-    envioCiudad:       document.getElementById('envioCiudad').value.trim(),
-    envioProvincia:    document.getElementById('envioProvincia').value.trim(),
+    envioCiudad:       ciudad,
+    envioProvincia:    provincia,
     envioDestNombre:   destNombre,
-    envioDestCedula:   document.getElementById('envioDestCedula').value.trim(),
-    envioDestContacto: document.getElementById('envioDestContacto').value.trim(),
-    envioDestEmail:    document.getElementById('envioDestEmail').value.trim(),
+    envioDestCedula:   destCedula,
+    envioDestContacto: destContacto,
+    envioDestEmail:    destEmail,
     envioMedio:        medioEl.value,
     envioTransporteNombre: medioEl.value === 'Transporte' ? transporteNombre : ''
   };
 
-  cerrarModalEnvio();
+  var html = '';
+  html += '<div style="margin-bottom:6px;font-weight:600">' + escH(textoOrigenDireccion_(direccionOrigen)) + '</div>';
+  html += '<div><b>Dirección:</b> ' + escH(direccion) + '</div>';
+  if (ciudad)    html += '<div><b>Ciudad:</b> ' + escH(ciudad) + '</div>';
+  if (provincia) html += '<div><b>Provincia:</b> ' + escH(provincia) + '</div>';
+  html += '<div style="margin-top:10px;margin-bottom:6px;font-weight:600">' + escH(textoOrigenDestinatario_(destinatarioOrigen)) + '</div>';
+  html += '<div><b>Destinatario:</b> ' + escH(destNombre) + '</div>';
+  if (destCedula)   html += '<div><b>Cédula:</b> ' + escH(destCedula) + '</div>';
+  if (destContacto) html += '<div><b>Contacto:</b> ' + escH(destContacto) + '</div>';
+  if (destEmail)    html += '<div><b>Correo:</b> ' + escH(destEmail) + '</div>';
+  html += '<div style="margin-top:10px"><b>Medio de envío:</b> ' + escH(medioEl.value) + '</div>';
+  if (datosEnvioPendiente.envioTransporteNombre) {
+    html += '<div><b>Transporte:</b> ' + escH(datosEnvioPendiente.envioTransporteNombre) + '</div>';
+  }
+
+  document.getElementById('resumenEnvioContenido').innerHTML = html;
+  document.getElementById('modalEnvio').classList.add('hidden');
+  document.getElementById('modalResumenEnvio').classList.remove('hidden');
+}
+function corregirEnvio() {
+  document.getElementById('modalResumenEnvio').classList.add('hidden');
+  document.getElementById('modalEnvio').classList.remove('hidden');
+}
+function enviarPerseoConfirmado() {
+  if (!datosEnvioPendiente) { showToast('Falta confirmar los datos de envío.', 'error'); return; }
+  var datosEnvio = datosEnvioPendiente;
+
+  document.getElementById('modalResumenEnvio').classList.add('hidden');
   mostrarOverlay('Enviando a Perseo...');
   deshabilitarBotones(true);
 
@@ -1027,7 +1116,7 @@ function confirmarEnvioYEnviarPerseo() {
   apiPost('enviar_perseo', payload)
     .then(function(pr) {
       ocultarOverlay(); deshabilitarBotones(false);
-      if (pr && pr.ok) { showToast('Pedido enviado a Perseo correctamente', 'ok'); }
+      if (pr && pr.ok) { showToast('Pedido enviado a Perseo correctamente', 'ok'); datosEnvioPendiente = null; }
       else { showToast('Error: ' + (pr ? pr.error : 'desconocido'), 'error'); }
     })
     .catch(function(e) { ocultarOverlay(); deshabilitarBotones(false); showToast('Error: ' + e, 'error'); });
