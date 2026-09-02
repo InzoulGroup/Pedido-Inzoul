@@ -472,11 +472,11 @@ function revisarCompletitudEnvio() {
 });
 document.getElementById('envioTransporteNombre').addEventListener('input', revisarCompletitudEnvio);
 function api(action, params) {
-  var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
+  var url = SCRIPT_URL + '?action=' + encodeURIComponent(action) + '&_ts=' + Date.now();
   Object.keys(params || {}).forEach(function(k) {
     url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k] || '');
   });
-  return fetch(url, { redirect: 'follow' })
+  return fetch(url, { redirect: 'follow', cache: 'no-store' })
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
@@ -807,6 +807,10 @@ function cargarCatalogo() {
         });
 
         if (productoCatalogo) {
+          // Al abrir un pedido existente, la línea trae la existencia que se
+          // guardó cuando fue creada. Sustituirla por el stock más reciente
+          // del catálogo de Zoho para que el widget no muestre un dato viejo.
+          linea.stock = Number(productoCatalogo.stock || 0);
           linea.iva = parseInt(productoCatalogo.iva, 10) || 0;
           linea.total = r2(linea.precioFinal * linea.cantidad);
         }
