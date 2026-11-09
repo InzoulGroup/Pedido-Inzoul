@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Copiar todo este contenido en el archivo index.html de GitHub -->
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
@@ -185,21 +186,34 @@
       </div>
       <div class="form-row" style="margin-top:10px">
         <div class="form-group">
-          <label>Tipo</label>
-          <select id="tratoTipo">
+          <label>Tipo *</label>
+          <select id="tratoTipo" required>
             <option value="">-Ninguno-</option>
             <option value="Negocios existentes">Negocios existentes</option>
             <option value="Nuevo negocio">Nuevo negocio</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Clasificacion</label>
-          <select id="tratoClasificacion">
+          <label>Clasificación *</label>
+          <select id="tratoClasificacion" required>
             <option value="">-Ninguno-</option>
             <option value="Pedidos en línea">Pedidos en línea</option>
             <option value="Mayorista">Mayorista</option>
             <option value="Minorista">Minorista</option>
             <option value="Empleado">Empleado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fuente de posible cliente *</label>
+          <select id="tratoFuentePosibleCliente" required>
+            <option value="">-Ninguno-</option>
+            <option value="Super agente Click Up">Super agente Click Up</option>
+            <option value="Página Web">Página Web</option>
+            <option value="Prospección directa">Prospección directa</option>
+            <option value="Recomendación de empleado">Recomendación de empleado</option>
+            <option value="Recomendación externa">Recomendación externa</option>
+            <option value="Instagram">Instagram</option>
+            <option value="WhatsApp">WhatsApp</option>
           </select>
         </div>
         <div class="form-group">
@@ -706,6 +720,7 @@ function modalTratosAbrir() {
         document.getElementById('tratoTipo').value          = r.trato.tipo || '';
         document.getElementById('tratoFase').value          = r.trato.fase || 'Cotización de propuesta/precio';
         document.getElementById('tratoClasificacion').value = r.trato.clasificacion || '';
+        document.getElementById('tratoFuentePosibleCliente').value = r.trato.fuentePosibleCliente || r.trato.fuente || '';
       }
       lineas = (r.lineas || []).map(function(l) {
         return {
@@ -765,6 +780,7 @@ function iniciarFormularioNuevo(cuentaData, nombreSugerido) {
   document.getElementById('ordenCompra').value = '';
   document.getElementById('tratoTipo').value = '';
   document.getElementById('tratoClasificacion').value = '';
+  document.getElementById('tratoFuentePosibleCliente').value = '';
   document.getElementById('tratoFase').value = 'Cotización de propuesta/precio';
   setFechaDefault();
   mostrarPantallaFormulario();
@@ -1006,6 +1022,19 @@ function limpiarAlertaProductos() {
 function guardar(accion) {
   var nombre = document.getElementById('tratoNombre').value.trim();
   if (!nombre) { showToast('Escribe el nombre del trato.', 'error'); return; }
+  var obligatorios = [
+    { id: 'tratoTipo', mensaje: 'Selecciona el tipo del trato.' },
+    { id: 'tratoClasificacion', mensaje: 'Selecciona la clasificación.' },
+    { id: 'tratoFuentePosibleCliente', mensaje: 'Selecciona la fuente de posible cliente.' }
+  ];
+  for (var i = 0; i < obligatorios.length; i++) {
+    var campo = document.getElementById(obligatorios[i].id);
+    if (!campo.value) {
+      showToast(obligatorios[i].mensaje, 'error');
+      campo.focus();
+      return;
+    }
+  }
   var aid = cuentaId || String(cuenta.id || '');
   if (accion === 'proforma') {
     if (!tratoId) {
@@ -1317,6 +1346,7 @@ function ejecutarGuardado(accion, aid, callback) {
     tratoTipo:         document.getElementById('tratoTipo').value,
     tratoFase:         document.getElementById('tratoFase').value,
     tratoClasificacion:document.getElementById('tratoClasificacion').value,
+    tratoFuentePosibleCliente: document.getElementById('tratoFuentePosibleCliente').value,
     accion:            accion,
     lineas: (accion !== 'solo_trato') ? lineas.map(function(l) {
       return { producto: l.codigo + ' - ' + l.nombre, cantidad: l.cantidad, precio: l.precioUnit, descuento: l.descuento, precioFinal: l.precioFinal, iva: String(l.iva), existencia: l.stock };
@@ -1465,6 +1495,7 @@ function resetFormulario() {
   document.getElementById('ordenCompra').value = '';
   document.getElementById('tratoTipo').value = '';
   document.getElementById('tratoClasificacion').value = '';
+  document.getElementById('tratoFuentePosibleCliente').value = '';
   setFechaDefault(); limpiarBtnDescarga(); limpiarAlertaProductos(); renderTabla();
 }
 function setFechaDefault() { var d = new Date(Date.now() + 7*24*60*60*1000); document.getElementById('fechaCierre').value = d.toISOString().slice(0,10); }
